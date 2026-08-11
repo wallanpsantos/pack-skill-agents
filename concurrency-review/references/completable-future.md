@@ -161,7 +161,7 @@ error("blockingIoCall failed",ex);
 ```
 
 | Work type                               | Executor                                                  |
-|-----------------------------------------|-----------------------------------------------------------|
+| --------------------------------------- | --------------------------------------------------------- |
 | Blocking I/O                            | Virtual-thread executor (shared) or dedicated I/O pool    |
 | CPU-bound                               | Sized platform pool / FJP — not commonPool for heavy load |
 | Fire-and-forget I/O without composition | `Thread.ofVirtual().start(...)` — skip CF                 |

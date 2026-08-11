@@ -33,15 +33,11 @@ Spring Boot >= 4.0.5. No preview/incubating APIs.
 Progress:
 
 - [ ]
-    1. Scope — identify shared mutable state, entry points, thread boundaries
-- [ ]
-    2. Baseline — reject preview/incubating APIs; confirm Spring Boot >= 4.0.5 if Spring is present
-- [ ]
-    3. Checklist pass — walk High → Medium → Modern items below
-- [ ]
-    4. Deep dive — load only the reference files that match findings
-- [ ]
-    5. Report — emit findings in the output format below
+  1. Scope — identify shared mutable state, entry points, thread boundaries
+- [ ] 2. Baseline — reject preview/incubating APIs; confirm Spring Boot >= 4.0.5 if Spring is present
+- [ ] 3. Checklist pass — walk High → Medium → Modern items below
+- [ ] 4. Deep dive — load only the reference files that match findings
+- [ ] 5. Report — emit findings in the output format below
 
 ### Step 1 — Scope
 
@@ -108,7 +104,7 @@ Map:
 ### Step 4 — Load references on demand
 
 | If you find…                                              | Read                                                                                                       |
-|-----------------------------------------------------------|------------------------------------------------------------------------------------------------------------| 
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Virtual Threads, pinning, resource limits, ScopedValue    | [references/virtual-threads.md](references/virtual-threads.md)                                             |
 | `@Async`, EnableAsync, SecurityContext, executor config   | [references/spring-async.md](references/spring-async.md)                                                   |
 | `CompletableFuture` chains, timeouts, executors           | [references/completable-future.md](references/completable-future.md)                                       |
@@ -182,7 +178,7 @@ grep -rn "Semaphore\|RateLimiter\|backpressure" --include="*.java"
 ## Defaults (do not offer menus)
 
 | Situation                                        | Default                                                                           |
-|--------------------------------------------------|-----------------------------------------------------------------------------------|
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
 | I/O-bound concurrency (new code)                 | Imperative style on Virtual Threads                                               |
 | Compose async results / adapt legacy Future APIs | `CompletableFuture` on a VT executor or dedicated pool                            |
 | Request context across VTs                       | `ScopedValue`                                                                     |

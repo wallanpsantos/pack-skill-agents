@@ -8,12 +8,12 @@ Load when reviewing balances, ledgers, monetary arithmetic, or concurrency contr
 2. Every `BigDecimal` multiply/divide uses explicit `RoundingMode` (and scale/MathContext as needed).
 3. Prefer 6 decimal places for intermediate precision unless domain says otherwise.
 4. Concurrent balance/state mutations MUST use explicit concurrency control:
-    - **Default**: `@Version` (optimistic locking) + retry with backoff on `OptimisticLockException`.
-    - **Accepted alternatives with explicit justification**: atomic database update
-      (`UPDATE ... SET balance = balance - ? WHERE balance >= ?`), pessimistic lock (`SELECT ... FOR UPDATE`),
-      serializable transaction.
-    - The requirement is concurrency control on financial state — the specific mechanism may vary, but it MUST NOT be
-      absent.
+   - **Default**: `@Version` (optimistic locking) + retry with backoff on `OptimisticLockException`.
+   - **Accepted alternatives with explicit justification**: atomic database update
+     (`UPDATE ... SET balance = balance - ? WHERE balance >= ?`), pessimistic lock (`SELECT ... FOR UPDATE`),
+     serializable transaction.
+   - The requirement is concurrency control on financial state — the specific mechanism may vary, but it MUST NOT be
+     absent.
 5. Encapsulate amount + currency in an immutable `record` with fail-fast validation.
 
 ## Optimistic locking (default)

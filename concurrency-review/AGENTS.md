@@ -13,8 +13,8 @@ escala, com foco no domínio financeiro.
 Ao revisar código concorrente, propor refatorações ou diagnosticar problemas de thread safety, você DEVE seguir
 rigorosamente as regras e padrões documentados neste manual.
 
-> **Filosofia Central:** *"Concorrência correta é mais importante que concorrência rápida. Prove com evidência antes de
-migrar."*
+> **Filosofia Central:** _"Concorrência correta é mais importante que concorrência rápida. Prove com evidência antes de
+> migrar."_
 
 ---
 
@@ -87,10 +87,10 @@ migrar."*
 - NUNCA realize divisão ou multiplicação de `BigDecimal` sem definir `RoundingMode`.
 - Prefira 6 casas decimais para precisão intermediária, salvo definição de domínio.
 - Mutações concorrentes de saldo/estado financeiro DEVEM usar controle de concorrência explícito:
-    - **Padrão**: `@Version` (optimistic locking) + retry com backoff em `OptimisticLockException`.
-    - **Alternativas aceitas com justificativa explícita**: update atômico no banco (ex:
-      `UPDATE ... SET balance = balance - ? WHERE balance >= ?`), locks pessimistas (`SELECT ... FOR UPDATE`), transação
-      serializable.
+  - **Padrão**: `@Version` (optimistic locking) + retry com backoff em `OptimisticLockException`.
+  - **Alternativas aceitas com justificativa explícita**: update atômico no banco (ex:
+    `UPDATE ... SET balance = balance - ? WHERE balance >= ?`), locks pessimistas (`SELECT ... FOR UPDATE`), transação
+    serializable.
 - O requisito é controle de concorrência sobre saldo — o mecanismo específico pode variar conforme o cenário, mas NUNCA
   deve estar ausente.
 - Encapsule amount + currency em `record` imutável com validação fail-fast.
@@ -114,9 +114,9 @@ migrar."*
 - `@Async` requer `@EnableAsync` na configuração.
 - Métodos `@Async` DEVEM ser públicos e chamados via outro bean (proxy). Self-invocation roda síncrono sem erro.
 - O executor de `@Async` DEVE ser configurado explicitamente (pool limitado ou Virtual Threads) com:
-    - Política de rejeição definida
-    - Nomeação de threads
-    - Métricas expostas (tamanho da fila, tarefas ativas, rejeições)
+  - Política de rejeição definida
+  - Nomeação de threads
+  - Métricas expostas (tamanho da fila, tarefas ativas, rejeições)
 - Executors customizados DEVEM ser fechados corretamente e ter observabilidade.
 - Em Spring Boot 4 com Java 25, o container pode usar Virtual Threads para requisições. Neste cenário, serviços
   síncronos são aceitáveis — use `CompletableFuture` apenas nas bordas com APIs já assíncronas.
@@ -170,23 +170,23 @@ Recomendações de migração por performance SÓ são válidas com evidência m
 
 Ao atuar no projeto, consulte os arquivos especializados quando necessário:
 
-- [`SKILL.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/SKILL.md): Workflow de revisão,
+- [`SKILL.md`] Workflow de revisão,
   checklist e formato de output.
 - [
-  `references/virtual-threads.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/virtual-threads.md):
+  `references/virtual-threads.md`]
   Virtual Threads, pinning (Java 25), limites de recursos, ScopedValue vs ThreadLocal.
 - [
-  `references/spring-async.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/spring-async.md):
+  `references/spring-async.md`]
   `@Async`, EnableAsync, SecurityContext, executor configuration.
 - [
-  `references/completable-future.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/completable-future.md):
+  `references/completable-future.md`]
   CF chains, timeouts, executors, terminal handlers.
 - [
-  `references/classic-issues.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/classic-issues.md):
+  `references/classic-issues.md`]
   Race conditions, visibility, deadlocks, DCL, locks, ConcurrentHashMap.
 - [
-  `references/financial-consistency.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/financial-consistency.md):
+  `references/financial-consistency.md`]
   BigDecimal, `@Version`, optimistic locking, Money value object.
 - [
-  `references/virtual-threads-vs-completable-future.md`](file:///C:/Users/walla/.gemini/antigravity-cli/skills/concurrency-review/references/virtual-threads-vs-completable-future.md):
+  `references/virtual-threads-vs-completable-future.md`]
   Decision tree VT vs CF.

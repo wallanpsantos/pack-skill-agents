@@ -159,7 +159,7 @@ Never swallow `InterruptedException`. Either restore the interrupt flag and hand
 ## Thread-safe collections
 
 | Use case                       | Wrong       | Right                   |
-|--------------------------------|-------------|-------------------------|
+| ------------------------------ | ----------- | ----------------------- |
 | Concurrent map                 | `HashMap`   | `ConcurrentHashMap`     |
 | Rare writes, lots of iteration | CHM         | `CopyOnWriteArrayList`  |
 | Producer-consumer              | `ArrayList` | `BlockingQueue`         |

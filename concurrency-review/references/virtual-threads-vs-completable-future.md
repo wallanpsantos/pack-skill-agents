@@ -3,7 +3,7 @@
 They are **not alternatives at the same layer**.
 
 |            | Virtual Thread                                | CompletableFuture                                          |
-|------------|-----------------------------------------------|------------------------------------------------------------|
+| ---------- | --------------------------------------------- | ---------------------------------------------------------- |
 | What it is | Lightweight execution carrier                 | Composition / async result API                             |
 | Solves     | Cheap blocking, simple imperative concurrency | Pipelines, combinators, adapting async APIs                |
 | Style      | Sequential code that blocks                   | Callback / stage chaining                                  |
