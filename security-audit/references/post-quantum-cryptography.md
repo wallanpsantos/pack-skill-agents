@@ -5,11 +5,14 @@ seguradoras, prontuários médicos e sistemas hospitalares. Não é um item do O
 publicou uma categoria dedicada a isso); trate como extensão setorial, no mesmo espírito da seção AI/ML Security do
 SKILL.md.
 
+Baseline de código: **Java 25 LTS**. Nenhum exemplo usa recurso preview/incubating — ML-KEM e ML-DSA são API final
+desde o JDK 24 (JEP 496/497) e continuam finais no JDK 25 LTS.
+
 ## Conteúdo
 - Por que isso importa agora (Harvest Now, Decrypt Later)
 - O que quebra e o que não quebra
 - Padrões NIST (FIPS 203/204/205)
-- Suporte em Java: JDK nativo vs Bouncy Castle
+- Suporte em Java: nativo (JDK 25 LTS) vs Bouncy Castle
 - Key Encapsulation para dados em repouso (código)
 - Assinatura digital com ML-DSA (código)
 - TLS em trânsito — hybrid key exchange
@@ -64,28 +67,27 @@ Em março de 2025 o NIST selecionou HQC como um quinto algoritmo (KEM alternativ
 lattice-based para o ML-KEM), com padronização final ainda em andamento. Trate ML-KEM/ML-DSA como a resposta atual,
 não a definitiva — a escolha de algoritmo deve ficar isolada atrás de uma interface (ver Crypto-Agility, ao final).
 
-## Suporte em Java: JDK Nativo vs Bouncy Castle
+## Suporte em Java: Nativo (JDK 25 LTS) vs Bouncy Castle
 
-| Caminho                  | Requisito         | Cobre                                              | Não cobre                          |
-|---------------------------|--------------------|------------------------------------------------------|--------------------------------------|
-| JDK nativo (JEP 496/497)  | JDK 24+            | `KeyPairGenerator`, `KEM`, `KeyFactory` (ML-KEM); `KeyPairGenerator`, `Signature`, `KeyFactory` (ML-DSA) | TLS (`javax.net.ssl`) até o JDK 26 — ver seção de TLS |
-| Bouncy Castle (`BC`)      | Java 21+           | Mesma API JCA (`KeyPairGenerator.getInstance("ML-KEM", "BC")`), mais TLS via provider `BCJSSE` | — |
+No baseline desta skill (Java 25 LTS), ML-KEM e ML-DSA **já são nativos** — JEP 496 e JEP 497 entraram como
+recursos finais (não preview) no JDK 24 e permanecem finais no JDK 25 LTS. Não é necessário nenhum flag
+`--enable-preview` nem dependência externa para usá-los.
 
-A partir do `bcprov-jdk18on` 1.79+, o Bouncy Castle alinhou os nomes de algoritmo ao padrão JCA definido pelas
-JEPs — ou seja, o mesmo código funciona com o provider `SUN`/`SunJCE` nativo do JDK 24+ ou com o provider `BC`,
-trocando apenas o nome do provider. Isso é o que viabiliza portar o mesmo código entre Java 21 (produção hoje, via
-BC) e Java 25+ LTS (nativo, quando a organização migrar).
+| Caminho                       | Necessário quando                                                                 | Cobre                                              |
+|----------------------------------|----------------------------------------------------------------------------------|------------------------------------------------------|
+| Nativo (JDK 25 LTS, JEP 496/497)  | Sempre — é o baseline desta skill, zero dependência extra                        | `KeyPairGenerator`, `KEM`, `KeyFactory` (ML-KEM); `KeyPairGenerator`, `Signature`, `KeyFactory` (ML-DSA) |
+| Bouncy Castle (`BCJSSE`)          | Apenas para proteger o **handshake TLS** — ver seção de TLS abaixo               | Hybrid key exchange em `javax.net.ssl`, via provider `BCJSSE` |
 
-```xml
-<dependency>
-    <groupId>org.bouncycastle</groupId>
-    <artifactId>bcprov-jdk18on</artifactId>
-    <version>1.84</version>
-</dependency>
-```
+Ou seja: para os dois casos de uso mais comuns — proteger uma chave de sessão (envelope encryption) e assinar um
+artefato — o JDK 25 LTS sozinho já resolve, sem Bouncy Castle. A única lacuna real do JDK 25 LTS é o **handshake
+TLS em si** (`javax.net.ssl`), porque o hybrid key exchange (JEP 527) só chega numa LTS no JDK 29 (2027) — para
+isso, e só para isso, entra o Bouncy Castle (ver seção de TLS).
 
-**Nota de versão:** confirme a versão atual do `bcprov-jdk18on` no momento da implementação — cripto pós-quântica é
-uma área ativa, e travar a auditoria numa versão específica sem revalidar é, por si só, um risco.
+**Nota:** se algum serviço da organização ainda estiver em Java 21 (fora do baseline desta skill), a mesma API JCA
+funciona via Bouncy Castle (`bcprov-jdk18on` 1.79+), trocando `KeyPairGenerator.getInstance("ML-KEM")` por
+`KeyPairGenerator.getInstance("ML-KEM", "BC")` e o parameter spec de `NamedParameterSpec` para
+`org.bouncycastle.jcajce.spec.MLKEMParameterSpec` — mas trate isso como rota de migração para Java 25 LTS, não
+como alvo permanente.
 
 ## Key Encapsulation para Dados em Repouso
 
@@ -94,29 +96,27 @@ usar ML-KEM para encapsular a chave simétrica (AES) que efetivamente cifra o da
 cifrado com AES-256/GCM (que já é seguro pós-quântico); o ML-KEM protege apenas a troca da chave AES.
 
 ```java
-// ✅ GOOD: Envelope encryption com ML-KEM protegendo a chave AES (Bouncy Castle, Java 21+).
-import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+// ✅ GOOD: Envelope encryption com ML-KEM protegendo a chave AES. Nativo do JDK 25 LTS —
+// nenhuma dependência externa, nenhum --enable-preview.
 import javax.crypto.KEM;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.KTSParameterSpec;
 import java.security.*;
+import java.security.spec.NamedParameterSpec;
 
 public class EnvelopeEncryption {
-
-    static { Security.addProvider(new BouncyCastleProvider()); }
 
     // Gerado uma vez por titular da chave (ex.: por tenant, por cofre de chaves).
     // Em produção, a chave privada fica em KMS/HSM — nunca em memória de aplicação sem proteção.
     public KeyPair gerarParDeChaves() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM", "BC");
-        kpg.initialize(MLKEMParameterSpec.ml_kem_768, new SecureRandom()); // nível de segurança padrão recomendado
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM");
+        kpg.initialize(NamedParameterSpec.ML_KEM_768); // nível de segurança padrão recomendado
         return kpg.generateKeyPair();
     }
 
     // Lado que cifra: encapsula uma chave AES-256 usando a chave pública do titular.
     public ChaveComEncapsulacao cifrarChaveDeSessao(PublicKey chavePublicaTitular) throws Exception {
-        KEM kem = KEM.getInstance("ML-KEM", "BC");
+        KEM kem = KEM.getInstance("ML-KEM");
         KTSParameterSpec params = new KTSParameterSpec.Builder("AES", 256).build();
         KEM.Encapsulator encapsulator = kem.newEncapsulator(chavePublicaTitular, params, null);
         KEM.Encapsulated encapsulado = encapsulator.encapsulate();
@@ -127,7 +127,7 @@ public class EnvelopeEncryption {
 
     // Lado que decifra: recupera a mesma chave AES-256 a partir da chave privada do titular.
     public SecretKey decapsularChaveDeSessao(PrivateKey chavePrivadaTitular, byte[] encapsulacao) throws Exception {
-        KEM kem = KEM.getInstance("ML-KEM", "BC");
+        KEM kem = KEM.getInstance("ML-KEM");
         KTSParameterSpec params = new KTSParameterSpec.Builder("AES", 256).build();
         KEM.Decapsulator decapsulator = kem.newDecapsulator(chavePrivadaTitular, params);
         return decapsulator.decapsulate(encapsulacao);
@@ -135,18 +135,6 @@ public class EnvelopeEncryption {
 
     public record ChaveComEncapsulacao(SecretKey chaveAes, byte[] encapsulacao) {}
 }
-```
-
-No JDK 24+ nativo, a única mudança é a fonte do parameter spec e a remoção do argumento de provider — o resto da
-API (`KeyPairGenerator`, `KEM`, `KTSParameterSpec`) é o mesmo:
-
-```java
-// Diferença ao usar o provider nativo do JDK 24+ em vez de Bouncy Castle:
-import java.security.spec.NamedParameterSpec;
-
-KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM"); // sem provider — usa o SunJCE nativo
-kpg.initialize(NamedParameterSpec.ML_KEM_768);
-KEM kem = KEM.getInstance("ML-KEM"); // idem
 ```
 
 ```java
@@ -163,30 +151,27 @@ Para assinar artefatos que precisam permanecer verificáveis por muito tempo —
 artefatos de build, comprovantes de transação:
 
 ```java
-// ✅ GOOD: Assinar com ML-DSA (Bouncy Castle, Java 21+).
-import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+// ✅ GOOD: Assinar com ML-DSA. Nativo do JDK 25 LTS — nenhuma dependência externa.
 import java.security.*;
+import java.security.spec.NamedParameterSpec;
 
 public class AssinaturaDocumento {
 
-    static { Security.addProvider(new BouncyCastleProvider()); }
-
     public KeyPair gerarParDeChaves() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
-        kpg.initialize(MLDSAParameterSpec.ml_dsa_65, new SecureRandom()); // nível de segurança padrão recomendado
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA");
+        kpg.initialize(NamedParameterSpec.ML_DSA_65); // nível de segurança padrão recomendado
         return kpg.generateKeyPair();
     }
 
     public byte[] assinar(PrivateKey chavePrivada, byte[] documento) throws Exception {
-        Signature assinatura = Signature.getInstance("ML-DSA", "BC");
+        Signature assinatura = Signature.getInstance("ML-DSA");
         assinatura.initSign(chavePrivada);
         assinatura.update(documento);
         return assinatura.sign();
     }
 
     public boolean verificar(PublicKey chavePublica, byte[] documento, byte[] assinaturaBytes) throws Exception {
-        Signature assinatura = Signature.getInstance("ML-DSA", "BC");
+        Signature assinatura = Signature.getInstance("ML-DSA");
         assinatura.initVerify(chavePublica);
         assinatura.update(documento);
         return assinatura.verify(assinaturaBytes);
@@ -194,28 +179,27 @@ public class AssinaturaDocumento {
 }
 ```
 
-No JDK 24+ nativo: `KeyPairGenerator.getInstance("ML-DSA")` sem provider, e
-`kpg.initialize(NamedParameterSpec.ML_DSA_65)` no lugar de `MLDSAParameterSpec.ml_dsa_65` — mesma observação da
-seção anterior.
-
 ## TLS em Trânsito — Hybrid Key Exchange
 
 Isto é o ponto mais fácil de confundir: ter `ML-KEM` disponível como primitiva criptográfica **não significa** que
-o handshake TLS do seu serviço já está protegido.
+o handshake TLS do seu serviço já está protegido — mesmo no baseline Java 25 LTS desta skill.
 
-- **JDK 24–26:** ML-KEM existe apenas como primitiva standalone (JEP 496). O stack TLS (`javax.net.ssl`) **não**
-  expõe grupos nomeados pós-quânticos — uma chamada `HttpClient`/`RestClient` comum continua negociando TLS
-  clássico (x25519/secp256r1), mesmo rodando em JDK 24+.
+- **Java 25 LTS (baseline desta skill):** ML-KEM/ML-DSA existem como primitivas standalone (JEP 496/497, ver seções
+  acima), mas o stack TLS (`javax.net.ssl`) **não** expõe grupos nomeados pós-quânticos — uma chamada
+  `HttpClient`/`RestClient` comum continua negociando TLS clássico (x25519/secp256r1).
 - **JDK 27+ (JEP 527):** adiciona hybrid key exchange nativo ao `SunJSSE` — `X25519MLKEM768` (habilitado por
   padrão, sem mudança de código), mais `SecP256r1MLKEM768` e `SecP384r1MLKEM1024` (opt-in via
-  `jdk.tls.namedGroups` ou `SSLParameters::setNamedGroups`).
-- **Java 21 e Java 25 LTS (as versões que a maioria dos bancos/hospitais roda em produção):** como o Java segue
-  ciclo de LTS a cada dois anos, o JEP 527 só chega a uma LTS no JDK 29 (2027). Até lá, hybrid TLS nativo via JSSE
-  não está disponível em LTS — a rota real é o provider **BCJSSE** do Bouncy Castle como ponte.
+  `jdk.tls.namedGroups` ou `SSLParameters::setNamedGroups`). Não é preview — é um recurso final do JEP quando
+  disponível.
+- **Lacuna em LTS:** como o Java segue ciclo de LTS a cada dois anos, o JEP 527 só chega a uma LTS no JDK 29
+  (2027). Até lá, hybrid TLS nativo via JSSE não está disponível no Java 25 LTS — a rota real é o provider
+  **BCJSSE** do Bouncy Castle como ponte, especificamente para o handshake TLS (não para KEM/assinatura, que já são
+  nativos).
 
 ```java
-// ✅ GOOD: Habilitar hybrid key exchange via Bouncy Castle JSSE em Java 21 LTS,
-// sem esperar o JDK 29.
+// ✅ GOOD: Habilitar hybrid key exchange via Bouncy Castle JSSE em Java 25 LTS,
+// sem esperar o JDK 29. Único uso de Bouncy Castle recomendado nesta skill —
+// restrito à camada TLS, já que KEM/assinatura já são nativos (seções acima).
 Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 Security.addProvider(new org.bouncycastle.jsse.provider.BouncyCastleJsseProvider());
 
@@ -224,6 +208,24 @@ context.init(null, null, null);
 SSLParameters params = context.getDefaultSSLParameters();
 params.setNamedGroups(new String[]{"X25519MLKEM768", "x25519", "secp256r1"});
 ```
+
+```xml
+<!-- Dependências para o exemplo acima — únicas nesta skill, restritas à ponte de TLS -->
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-jdk18on</artifactId>
+    <version>1.84</version>
+</dependency>
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bctls-jdk18on</artifactId>
+    <version>1.84</version>
+</dependency>
+```
+
+**Nota de versão:** confirme a versão atual do `bcprov-jdk18on`/`bctls-jdk18on` no momento da implementação —
+cripto pós-quântica é uma área ativa, e travar a auditoria numa versão específica sem revalidar é, por si só, um
+risco.
 
 ```java
 // ✅ GOOD: Em JDK 27+, nenhuma mudança de código é necessária — X25519MLKEM768
@@ -325,7 +327,7 @@ Itens concretos de crypto-agility para revisar:
 |----------------------------------------------|---------------------------------------------------------------------|
 | NIST CSRC — PQC Standardization               | Especificação oficial dos FIPS 203/204/205 e status do HQC          |
 | OpenJDK JEP 496, 497, 527                     | Especificação exata da API Java nativa (ML-KEM, ML-DSA, TLS híbrido) |
-| Bouncy Castle PQC Almanac (`downloads.bouncycastle.org`) | Referência de API para quem está em Java 21–23 ou precisa de TLS híbrido antes do JDK 29 |
+| Bouncy Castle PQC Almanac (`downloads.bouncycastle.org`) | Referência de API para a ponte de TLS híbrido (BCJSSE) antes do JDK 29, ou para serviços ainda em Java 21 |
 | NSA CNSA 2.0 Guidance                         | Roteiro de referência de facto para prazos de migração             |
 
 ## Referências

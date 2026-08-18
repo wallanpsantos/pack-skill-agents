@@ -1,14 +1,14 @@
 ---
 name: security-audit
-description: Checklist de segurança para Java 21+ (Spring Boot 4.1+, Quarkus, Jakarta EE e Java puro) cobrindo o OWASP Top 10:2025 completo — validação de entrada, SQL Injection, XSS, CSRF, SSRF, autenticação/autorização, JWT, criptografia, gestão de segredos, desserialização, supply chain, containers e headers de segurança — além de criptografia pós-quântica (ML-KEM, ML-DSA, resistência a computação quântica) para sistemas em bancos, meios de pagamento, seguradoras e saúde. Usar sempre que o usuário pedir revisão de segurança de código, auditoria antes de produção, análise de vulnerabilidade, conformidade com OWASP, threat modeling, avaliação de risco quântico/pós-quântico, ou mencionar termos como "SQLi", "XSS", "CSRF", "SSRF", "pentest", "hardening", "post-quantum", "quantum-safe", "está seguro?" ou "pode ir pra produção?".
-compatibility: Requer Bash (Linux/macOS/Git Bash) ou PowerShell 5.1+/cmd (Windows) para rodar scripts/quick_scan.*; exemplos de código assumem Java 21+, com ML-KEM/ML-DSA nativos exigindo JDK 24+ (ver references/post-quantum-cryptography.md)
+description: Checklist de segurança para Java 25 LTS (Spring Boot 4.1+, Quarkus, Jakarta EE e Java puro) cobrindo o OWASP Top 10:2025 completo — validação de entrada, SQL Injection, XSS, CSRF, SSRF, autenticação/autorização, JWT, criptografia, gestão de segredos, desserialização, supply chain, containers e headers de segurança — além de criptografia pós-quântica (ML-KEM, ML-DSA, resistência a computação quântica) para sistemas em bancos, meios de pagamento, seguradoras e saúde. Usar sempre que o usuário pedir revisão de segurança de código, auditoria antes de produção, análise de vulnerabilidade, conformidade com OWASP, threat modeling, avaliação de risco quântico/pós-quântico, ou mencionar termos como "SQLi", "XSS", "CSRF", "SSRF", "pentest", "hardening", "post-quantum", "quantum-safe", "está seguro?" ou "pode ir pra produção?".
+compatibility: Baseline Java 25 LTS — nenhum exemplo usa recurso preview ou incubating. Requer Bash (Linux/macOS/Git Bash) ou PowerShell 5.1+/cmd (Windows) para rodar scripts/quick_scan.*. Bouncy Castle só é necessário para a ponte de TLS híbrido (ver references/post-quantum-cryptography.md) — ML-KEM/ML-DSA já são nativos no JDK 25.
 license: Proprietary - Internal use only
 ---
 
 # Security Audit Skill
 
-Checklist de segurança para aplicações Java 21+ baseado no OWASP Top 10:2025. Funciona com Spring Boot 4.1+, Quarkus,
-Jakarta EE e Java puro.
+Checklist de segurança para aplicações Java 25 LTS baseado no OWASP Top 10:2025. Funciona com Spring Boot 4.1+, Quarkus,
+Jakarta EE e Java puro. Nenhum exemplo de código usa recurso preview ou incubating.
 
 ## Quando Usar
 
@@ -23,18 +23,53 @@ Jakarta EE e Java puro.
 - Sistema em setor regulado (banco, meios de pagamento, seguradora, saúde/hospital) que precisa avaliar risco de
   computação quântica na criptografia usada
 
+## Escopo e Modo de Execução
+
+Antes de ler qualquer código, identifique **modo** e **escopo** do pedido — os dois mudam o comportamento abaixo.
+
+| Modo                    | Gatilhos típicos                                                          | Comportamento                                                                 |
+|----------------------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| **Auditoria completa**       | "audita o serviço", "revisão de segurança geral", "pode ir pra produção?" | Escopo = repositório/serviço inteiro. Ver estratégia de repositório grande abaixo. |
+| **Auditoria direcionada**     | Caminho explícito informado ("revê esse módulo/pacote/PR", um diretório citado) | Escopo = caminho informado + pontos de integração dele (quem chama, o que ele chama) — vulnerabilidade de fronteira é comum. |
+| **Levantamento (inventário)** | "lista as vulnerabilidades", "levanta o que tem", "quais os riscos"       | Produza só a lista (severidade, categoria OWASP, local, descrição curta). Não aplique correção nem escreva plano de mitigação estendido por padrão — implica a regra "Do Not Commit on Request" mesmo se o usuário não disser isso explicitamente. |
+
+**Se o pedido não deixar claro qual dos três é, pergunte antes de começar a ler código** — não assuma
+silenciosamente. Um "audita esse serviço" sem indicar se é o repositório inteiro ou uma parte específica é ambíguo
+o suficiente para perguntar.
+
+### Estratégia para Serviço/Repositório Grande (Auditoria Completa)
+
+Ler todo arquivo por completo não cabe no contexto disponível em serviços grandes. Use dois passos:
+
+1. **Triagem estrutural, sem ler corpo de arquivo ainda:**
+   - Rode `quick_scan.*` (ver Script Utilitário) no diretório raiz do escopo — achados candidatos, custo baixo.
+   - Localize por **nome/caminho** as superfícies de maior risco antes de abrir conteúdo: pontos de entrada
+     (`*Controller.java`, `*Resource.java`, `*Endpoint.java`), configuração de segurança (`*SecurityConfig*`,
+     `*Filter*`), e qualquer arquivo com `Auth`, `Jwt`, `Token`, `Crypto`, `Cipher`, `Password`, `Payment`,
+     `Upload`, `Serializ` no nome.
+2. **Leitura dirigida, nesta ordem:** pontos de entrada → autenticação/autorização → criptografia/secrets →
+   desserialização/upload de arquivo → o restante, aplicando o Security Checklist e `references/` conforme
+   necessário a cada parada.
+
+**Reporte a cobertura explicitamente** no resultado final: quais arquivos/módulos foram lidos por completo, quais
+só passaram pela triagem automática (`quick_scan.*`, sem leitura manual) e quais não foram tocados. Isso evita dar
+a impressão de cobertura total quando parte do serviço só recebeu triagem de regex.
+
 ## Fluxo de Trabalho
 
-1. **Triagem rápida (opcional, se houver código-fonte acessível):** execute
-   `scripts/quick_scan.sh <diretório>`. É um grep determinístico — trata cada linha retornada como
-   **candidato**, nunca como achado confirmado. Falsos positivos são esperados.
-2. **Percorra o Security Checklist** abaixo, camada por camada (Desenvolvimento → Pipeline → Infraestrutura).
-3. **Para cada item que gerar dúvida técnica ou exigir o padrão de código correto**, abra o arquivo de
+1. **Identifique modo e escopo** (seção acima) antes de tocar em código.
+2. **Triagem rápida:** execute `scripts/quick_scan.sh|.ps1|.bat <diretório>` sobre o escopo definido. É
+   determinístico — trate cada linha retornada como **candidato**, nunca como achado confirmado. Falsos positivos
+   são esperados.
+3. **Percorra o Security Checklist** abaixo, camada por camada (Desenvolvimento → Pipeline → Infraestrutura),
+   dentro do escopo definido.
+4. **Para cada item que gerar dúvida técnica ou exigir o padrão de código correto**, abra o arquivo de
    `references/` correspondente ao domínio (mapa abaixo). Leia o arquivo completo — não use `head`/`tail` para
    pré-visualizar, os índices já estão no topo de cada arquivo.
-4. **Reporte os achados** com severidade, local (`arquivo:linha`), impacto e mitigação.
-5. Se o usuário pedir apenas um plano (vai aplicar as correções manualmente), siga a regra "Do Not Commit on
-   Request" em Execution Rules.
+5. **Reporte os achados** com severidade, local (`arquivo:linha`), impacto e mitigação — ou só a lista, se o modo
+   for Levantamento.
+6. Se o modo for Levantamento, ou se o usuário pedir apenas um plano (vai aplicar as correções manualmente), siga a
+   regra "Do Not Commit on Request" em Execution Rules.
 
 ## Mapa de Referências
 
@@ -70,7 +105,7 @@ scripts aplicam exatamente os mesmos padrões e produzem a mesma saída.
 
 ## OWASP Top 10:2025 Quick Reference
 
-| #   | Risk                                        | Primary CWE      | Mitigation in Java 21+                                                   |
+| #   | Risk                                        | Primary CWE      | Mitigation in Java 25 LTS                                                   |
 |-----|---------------------------------------------|------------------|--------------------------------------------------------------------------|
 | A01 | Broken Access Control (includes SSRF)       | CWE-284, CWE-918 | Service layer role checks, deny-by-default, validate outgoing URLs/hosts |
 | A02 | Security Misconfiguration                   | CWE-16           | Disable debug, secure headers, container hardening                       |
@@ -108,7 +143,7 @@ scripts aplicam exatamente os mesmos padrões e produzem a mesma saída.
 - [ ] **JWT Tokens:** `spring-boot-starter-oauth2-resource-server` ou validação explícita de `iss`, `aud`, `exp`, `alg`.
 - [ ] **Threat Modeling:** STRIDE ou OWASP Cornucopia aplicado no design de novas features.
 - [ ] **AI/LLM Security:** Se LLMs integrados, OWASP Top 10 for LLM aplicado.
-- [ ] **Testcontainers:** Versão `2.0.5+` para alinhamento com Java 25.
+- [ ] **Testcontainers:** Versão `2.0.5+` (compatível com Java 25 LTS).
 
 ### 2. Camada de Pipeline (CI/CD & SCA)
 
@@ -189,10 +224,11 @@ houver hardware quântico capaz). Detalhes completos, código e panorama regulat
 
 ## Execution Rules
 
-* **Do Not Commit on Request:** Se o usuário especificar que fará os ajustes manualmente ou pedir apenas um plano, NÃO
-  modifique o codebase. Em vez disso, crie um plano de auditoria como artefato markdown usando
-  `assets/audit-report-template.md` como modelo, preenchendo vulnerabilidade, impacto e bloco de mitigação para
-  cada achado.
+* **Do Not Commit on Request:** Se o modo for Levantamento (ver Escopo e Modo de Execução), ou se o usuário
+  especificar que fará os ajustes manualmente ou pedir apenas um plano, NÃO modifique o codebase. Em vez disso,
+  crie um plano de auditoria como artefato markdown usando `assets/audit-report-template.md` como modelo,
+  preenchendo vulnerabilidade, impacto e bloco de mitigação para cada achado — ou, em modo Levantamento, só a
+  lista de achados sem o detalhamento de mitigação por item.
 * **Generate HTML Report Option:** Quando solicitado, gere um relatório de findings em HTML usando a skill `pdf` ou
   templates Markdown → HTML.
 * **GitHub Security Integration:** Ao criar planos de CI/CD, inclua CodeQL, Dependabot e Dependency Review actions do
