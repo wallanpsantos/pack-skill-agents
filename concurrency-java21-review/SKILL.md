@@ -55,7 +55,9 @@ Map:
 
 ### Step 2 — Baseline (always apply)
 
-- **Reject preview/incubating** — `StructuredTaskScope`, `ScopedValue` (preview JEP 446), and any `--enable-preview` / `jdk.incubator.*` is **Critical**. Do not suggest preview APIs.
+- **Reject preview/incubating** — `ScopedValue` (preview, JEP 446) and `StructuredTaskScope`
+  (incubating in JDK 21 via `jdk.incubator.concurrent`; preview only from JDK 22/JEP 453),
+  plus any `--enable-preview` / `jdk.incubator.*`, is **Critical**. Do not suggest preview APIs.
 - **Spring Boot minimum** — 3.4.5. Flag versions below 3.4.5 and incompatible transitive deps.
 - **I/O must have** timeout, try-with-resources / proper shutdown, and terminal exception handling on async chains.
 - **Money** — never `double`/`float`; `BigDecimal` ops need explicit `RoundingMode`; concurrent balance needs
@@ -77,7 +79,7 @@ Map:
 - [ ] No `double`/`float` for money; no `BigDecimal` arithmetic without `RoundingMode`
 - [ ] No concurrency logic based on `ConcurrentHashMap.size()` / `isEmpty()` (estimates)
 - [ ] `InterruptedException` not swallowed — restored or propagated
-- [ ] No `ThreadLocal` used as cache in Virtual Thread code paths (2000x+ initialization overhead)
+- [ ] No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with task count — often thousands of initializations/sec vs. one)
 - [ ] `thenApplyAsync` / `supplyAsync` without explicit executor when work is blocking (defaults to `commonPool`)
 - [ ] No JNI/native calls in hot VT paths without understanding pinning implications
 
@@ -95,7 +97,7 @@ Map:
 - [ ] `InheritableThreadLocal` not used for propagation at VT scale (expensive map copy per VT)
 - [ ] `OptimisticLockException` has retry policy (with documented max attempts and backoff)
 - [ ] `Semaphore` / backpressure protecting downstream resources under VT concurrency
-- [ ] Semaphore permits aligned with HikariCP `maximumPoolSize`
+- [ ] Semaphore permits aligned with HikariCP `maximumPoolSize` — `Semaphore.acquire()` parks the VT (unmounts carrier); waiting inside HikariCP's `synchronized` getConnection() pins it. Permits == pool size ensures permit-holders never block inside the monitor.
 - [ ] Executor has observability with proper Micrometer instruments: `Counter` (counts/events), `Gauge` (queue size/active tasks), `Timer` (latency/durations), `DistributionSummary` (payload sizes/histograms) (Evans et al., Ch. 11)
 - [ ] `@Async` executor configured with rejection policy, naming, and metrics
 - [ ] No performance antipatterns present, such as "Tuning by Folklore" (applying flags/tunings without context) or "Distracted by Shiny" (adopting VTs without profiling) (Evans et al., App. B)
@@ -175,7 +177,7 @@ Severity:
 - Default Spring `@Async` executor is unbounded thread-per-task (OOM risk). In Spring Boot 3.4.5 + Java 21, synchronous
   services on VT container are preferred; use CF only at async integration edges.
 - `ThreadLocal` under millions of VTs retains heap until thread ends; always clear with `remove()` in `finally` (or pass context as explicit record parameters). `ScopedValue` is preview in Java 21 (JEP 446) — prohibited in production code.
-- `ThreadLocal` as per-thread cache causes 2000x+ initialization overhead with VTs — use application-scoped caches.
+- No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with task count — often thousands of initializations/sec vs. one)
 - `InheritableThreadLocal` copies the entire map at VT creation — expensive at scale. Avoid or pass context explicitly.
 - `map.size()` / `isEmpty()` on `ConcurrentHashMap` are estimates — never gate financial logic on them.
 - Nested `ConcurrentHashMap.compute` — non-atomic state and reentrant access risk. Prohibited in production.
