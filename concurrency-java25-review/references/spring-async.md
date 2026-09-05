@@ -1,7 +1,7 @@
 # Spring @Async Pitfalls
 
 Load when reviewing `@Async`, async executors, SecurityContext propagation, or executor configuration. Requires Spring
-Boot >= 4.0.5, Java 25.
+Boot >= 4.1.1, Java 25.
 
 ---
 
