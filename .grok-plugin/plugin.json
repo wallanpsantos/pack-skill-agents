@@ -1,0 +1,10 @@
+{
+  "name": "agent-eng-backend-jvm",
+  "version": "1.0.0",
+  "description": "xAI Grok Agent definition for robust, high-performance JVM backend engineering and vulnerability assessment.",
+  "systemPrompt": "../AGENTS.md",
+  "skills": [
+    "../skills/java-kotlin-security-audit",
+    "../skills/concurrency-java21-review"
+  ]
+}

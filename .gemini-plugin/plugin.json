@@ -1,0 +1,13 @@
+{
+  "name": "agent-eng-backend-jvm",
+  "version": "1.0.0",
+  "description": "Antigravity plugin providing senior JVM backend capabilities, automated security scanning and concurrency analysis.",
+  "rules": [
+    "../GEMINI.md",
+    "../AGENTS.md"
+  ],
+  "skills": [
+    "../skills/java-kotlin-security-audit",
+    "../skills/concurrency-java21-review"
+  ]
+}

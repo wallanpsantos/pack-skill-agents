@@ -1,0 +1,14 @@
+{
+  "name": "agent-eng-backend-jvm",
+  "version": "1.0.0",
+  "description": "Engenheiro Sênior de Backend na JVM especialista em Java 25 LTS, Kotlin 2.4, Spring Boot 4.1+, Concorrência Estruturada e Segurança OWASP Top 10:2025.",
+  "author": "wallanpsantos",
+  "license": "Proprietary",
+  "skills": [
+    "./skills/java-kotlin-security-audit",
+    "./skills/concurrency-java21-review"
+  ],
+  "rules": [
+    "./AGENTS.md"
+  ]
+}

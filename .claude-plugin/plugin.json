@@ -1,0 +1,10 @@
+{
+  "name": "agent-eng-backend-jvm",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for Senior JVM Backend Engineering (Java 25, Kotlin 2.4, Spring Boot 4.1.1+, Concurrency, Security Audit).",
+  "entrypoint": "CLAUDE.md",
+  "skills": [
+    "../skills/java-kotlin-security-audit",
+    "../skills/concurrency-java21-review"
+  ]
+}
