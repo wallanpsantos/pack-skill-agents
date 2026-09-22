@@ -29,13 +29,17 @@ Este agente possui habilidades embutidas que devem ser invocadas sob demanda:
 - **Ação:** Leia o `SKILL.md` associado, utilize o `quick_scan` para triagem inicial e gere o relatório baseado no
   template `assets/audit-report-template.md`.
 
-### 2. `concurrency-java21-review` (`skills/concurrency-java21-review/SKILL.md`)
+### 2. `java-kotlin-concurrency` (`skills/java-kotlin-concurrency/SKILL.md`)
 
-- **Quando ativar:** Revisão de concorrência, migração para Virtual Threads no Java 21/25, análise de thread pinning,
-  deadlocks, `synchronized` vs `ReentrantLock`, uso correto de `CompletableFuture` e coroutines.
-- **Ação:** Siga o checklist de concorrência em `skills/concurrency-java21-review/SKILL.md`.
+- **Quando ativar:** Revisão e implementação de concorrência e paralelismo em Java 25 LTS e Kotlin 2.4+ (alvo JVM de servidor), análise de thread safety, race conditions, deadlocks, Virtual Threads (Project Loom), carrier thread pinning, `ScopedValue`, `CompletableFuture`, Spring `@Async`, `ForkJoinPool`, `parallelStream`, Kotlin Coroutines, funções `suspend`, Structured Concurrency, `Dispatchers`, `Flow`, `Mutex`, integridade de estado financeiro sob acesso concorrente e deployment cloud-native.
+- **Ação:** Siga o checklist de concorrência em `skills/java-kotlin-concurrency/SKILL.md` e execute a varredura estática de hotspots com `scripts/scan-concurrency.sh` ou `scripts/scan-concurrency.ps1`.
 
-### 3. `clean-code` (`skills/clean-code/SKILL.md`)
+### 3. `concurrency-java21-review` (`skills/concurrency-java21-review/SKILL.md`)
+
+- **Quando ativar:** Auditoria e migração de bases legadas Java 21 para Virtual Threads e análise retroativa.
+- **Ação:** Siga as diretrizes de `skills/concurrency-java21-review/SKILL.md`.
+
+### 4. `clean-code` (`skills/clean-code/SKILL.md`)
 
 - **Quando ativar:** Revisões de legibilidade, refatoração de código complexo ou legado, redução de complexidade
   ciclomática/cognitiva, aplicação dos princípios DRY, KISS e YAGNI, eliminação de code smells e melhoria de
@@ -43,14 +47,14 @@ Este agente possui habilidades embutidas que devem ser invocadas sob demanda:
 - **Ação:** Siga as convenções de nomenclatura, limites de funções e regras de refatoração em
   `skills/clean-code/SKILL.md`.
 
-### 4. `design-patterns` (`skills/design-patterns/SKILL.md`)
+### 5. `design-patterns` (`skills/design-patterns/SKILL.md`)
 
 - **Quando ativar:** Implementação e refatoração de padrões GoF (Criacionais, Estruturais, Comportamentais) e padrões
   arquiteturais em Java 25 e Kotlin 2.4, modelagem de domínio rica, e cálculos com precisão monetária estrita
   (`BigDecimal`).
 - **Ação:** Siga os catálogos idiomáticos e diretrizes de desacoplamento em `skills/design-patterns/SKILL.md`.
 
-### 5. `solid-principles` (`skills/solid-principles/SKILL.md`)
+### 6. `solid-principles` (`skills/solid-principles/SKILL.md`)
 
 - **Quando ativar:** Avaliação e refatoração arquitetural baseada nos princípios SOLID (SRP, OCP, LSP, ISP, DIP),
   modularização de classes/serviços, isolamento de contratos e inversão de dependência em Java 25 e Kotlin 2.4.
