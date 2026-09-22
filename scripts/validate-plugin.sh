@@ -53,6 +53,7 @@ done
 
 SKILLS=(
     "java-kotlin-security-audit"
+    "java-kotlin-concurrency"
     "concurrency-java21-review"
     "clean-code"
     "design-patterns"
