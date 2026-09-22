@@ -92,7 +92,7 @@ seguir rigorosamente as regras abaixo**:
 5. **Concorrência Segura em Saldo**:
     - Entidades que persistem saldos sujeitos a concorrência devem utilizar controle de concorrência otimista
       (`@Version`) e retentativas com backoff e jitter na camada de serviço. Para detalhes,
-      consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+      consulte [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md).
 
 ### Implementação Canônica do Tipo `Money`
 
@@ -567,7 +567,7 @@ class PaymentGatewayFactory(gatewayList: List<PaymentGateway>) {
 - **Atenção Crítica**: **Nunca** use singleton para encapsular conexões de banco de dados (`java.sql.Connection`) ou
   estados mutáveis compartilhados. Em ambientes com Java 25 Virtual Threads, singletons compartilhados com blocos
   `synchronized` causam *thread pinning* no carrier thread do Loom.
-  Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+  Consulte [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md).
 
 #### Java 25 (Spring Managed Singleton vs Enum Thread-Safe)
 
@@ -1169,7 +1169,7 @@ Simple, Stupid*) e **YAGNI** (*You Aren't Gonna Need It*), documentados em [clea
 | **`MathContext` em Dinheiro**          | Limita algarismos significativos e quebra casas decimais silenciosamente       | `BigDecimal.setScale(6, RoundingMode.HALF_EVEN)` em toda operação    |
 
 Para orientações detalhadas sobre concorrência segura com Virtual Threads e prevenção de bloqueios na JVM,
-consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+consulte [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md).
 
 ---
 
@@ -1178,5 +1178,5 @@ consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 - [solid-principles](../solid-principles/SKILL.md) — Princípios de design orientado a objetos que os padrões
   materializam.
 - [clean-code](../clean-code/SKILL.md) — Boas práticas de legibilidade, funções limpas e prevenção de sobre-engenharia.
-- [concurrency-java21-review](../concurrency-java21-review/SKILL.md) — Concorrência segura, Virtual Threads (Project
-  Loom) e prevenção de thread pinning em padrões de projeto.
+- [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md) — Virtual Threads (Java 25), Kotlin Coroutines (2.4+),
+  carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
