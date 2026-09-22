@@ -58,7 +58,7 @@ scripts/
 - Consumes: Conceitos fundamentais de Clean Code, DRY, KISS, YAGNI, Boy Scout Rule, Guard Clauses, Naming Conventions.
 - Produces: Skill completa com exemplos espelhados em Java 25 e Kotlin 2.4+, eliminando referências desatualizadas a Java 15/16 e adicionando referências cruzadas a `skills/solid-principles` e `skills/design-patterns`.
 
-- [ ] **Step 1: Atualizar `skills/clean-code/SKILL.md` com suporte idiomático a Java 25 e Kotlin 2.4+**
+- [x] **Step 1: Atualizar `skills/clean-code/SKILL.md` com suporte idiomático a Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/clean-code/SKILL.md`:
 1. **Frontmatter YAML:**
@@ -83,11 +83,11 @@ Garantir no `skills/clean-code/SKILL.md`:
    - Se a refatoração envolver concorrência ou Virtual Threads: referenciar [`../concurrency-java21-review/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/concurrency-java21-review/SKILL.md).
    - Se envolver validação de segurança ou sanitização de entrada: referenciar [`../java-kotlin-security-audit/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/java-kotlin-security-audit/SKILL.md).
 
-- [ ] **Step 2: Atualizar `skills/clean-code/README.md`**
+- [x] **Step 2: Atualizar `skills/clean-code/README.md`**
 
 Refletir o escopo atualizado (Java 25 LTS + Kotlin 2.4+) no `skills/clean-code/README.md`, adicionando a matriz de conceitos e links para as demais skills.
 
-- [ ] **Step 3: Testar integridade do frontmatter e links do `clean-code`**
+- [x] **Step 3: Testar integridade do frontmatter e links do `clean-code`**
 
 Executar no PowerShell:
 ```powershell
@@ -96,7 +96,7 @@ if ($c -match "(?s)^---\s*name:\s*clean-code\s*description:") { Write-Output "Fr
 ```
 Expected: `Frontmatter: PASS`.
 
-- [ ] **Step 4: Commit das alterações de `clean-code`**
+- [x] **Step 4: Commit das alterações de `clean-code`**
 
 ```bash
 git add skills/clean-code/
@@ -115,7 +115,7 @@ git commit -m "feat(clean-code): align with Java 25 and Kotlin 2.4 idioms with c
 - Consumes: Padrões GoF (Criacionais, Estruturais, Comportamentais), Regras de Domínio Financeiro (`BigDecimal`).
 - Produces: Catálogo idiomático onde cada padrão é resolvido em Java 25 e Kotlin 2.4, vinculando-se aos princípios SOLID e Clean Code.
 
-- [ ] **Step 1: Atualizar `skills/design-patterns/SKILL.md` com padrões em Java 25 e Kotlin 2.4+**
+- [x] **Step 1: Atualizar `skills/design-patterns/SKILL.md` com padrões em Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/design-patterns/SKILL.md`:
 1. **Frontmatter YAML:**
@@ -142,11 +142,11 @@ Garantir no `skills/design-patterns/SKILL.md`:
    - Para cada padrão, indicar qual princípio SOLID ele promove (ex: Strategy promove OCP; Factory promove DIP e SRP). Referenciar explicitamente [`../solid-principles/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/solid-principles/SKILL.md).
    - Seção de Anti-Patterns ("Patternitis"): Não introduzir padrões prematuramente quando uma função simples resolve (KISS/YAGNI). Referenciar explicitamente [`../clean-code/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/clean-code/SKILL.md).
 
-- [ ] **Step 2: Atualizar `skills/design-patterns/README.md`**
+- [x] **Step 2: Atualizar `skills/design-patterns/README.md`**
 
 Documentar a tabela de padrões GoF vs Idiomas Modernos da JVM (Java 25 Records vs Kotlin `by`/Lambdas), matriz de uso e links.
 
-- [ ] **Step 3: Testar integridade do frontmatter e sintaxe de `design-patterns`**
+- [x] **Step 3: Testar integridade do frontmatter e sintaxe de `design-patterns`**
 
 Executar no PowerShell:
 ```powershell
@@ -155,7 +155,7 @@ if ($c -match "(?s)^---\s*name:\s*design-patterns\s*description:") { Write-Outpu
 ```
 Expected: `Frontmatter: PASS`.
 
-- [ ] **Step 4: Commit das alterações de `design-patterns`**
+- [x] **Step 4: Commit das alterações de `design-patterns`**
 
 ```bash
 git add skills/design-patterns/
@@ -174,7 +174,7 @@ git commit -m "feat(design-patterns): provide idiomatic Java 25 and Kotlin 2.4 p
 - Consumes: Princípios SOLID (SRP, OCP, LSP, ISP, DIP), Spring Boot 4.1.1+, Java 25 LTS, Kotlin 2.4+.
 - Produces: Guia detalhado de SOLID na JVM com exemplos emparelhados de violação e solução em Java e Kotlin, com referências para padrões de projeto e clean code.
 
-- [ ] **Step 1: Atualizar `skills/solid-principles/SKILL.md` com paridade Java 25 e Kotlin 2.4+**
+- [x] **Step 1: Atualizar `skills/solid-principles/SKILL.md` com paridade Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/solid-principles/SKILL.md`:
 1. **Frontmatter YAML:**
@@ -206,11 +206,11 @@ Garantir no `skills/solid-principles/SKILL.md`:
    - Refatoração Java 25 & Kotlin 2.4: Injeção estrita via construtor com dependência exclusiva em interfaces de domínio.
    - Atualização Spring Boot 4.1.1+: Sem anotações `@Autowired` em construtores únicos; classes de serviço final por padrão em Kotlin com `all-open`/`kotlin-spring`.
 
-- [ ] **Step 2: Atualizar `skills/solid-principles/README.md`**
+- [x] **Step 2: Atualizar `skills/solid-principles/README.md`**
 
 Atualizar o `README.md` com a matriz de resumo SOLID, exemplos concisos e mapa de referências para `design-patterns` e `clean-code`.
 
-- [ ] **Step 3: Testar integridade do frontmatter e links em `solid-principles`**
+- [x] **Step 3: Testar integridade do frontmatter e links em `solid-principles`**
 
 Executar no PowerShell:
 ```powershell
@@ -219,7 +219,7 @@ if ($c -match "(?s)^---\s*name:\s*solid-principles\s*description:") { Write-Outp
 ```
 Expected: `Frontmatter: PASS`.
 
-- [ ] **Step 4: Commit das alterações de `solid-principles`**
+- [x] **Step 4: Commit das alterações de `solid-principles`**
 
 ```bash
 git add skills/solid-principles/
@@ -247,7 +247,7 @@ git commit -m "feat(solid-principles): comprehensive Java 25 and Kotlin 2.4 exam
 - Consumes: As 5 skills oficializadas sob `skills/` (`java-kotlin-security-audit`, `concurrency-java21-review`, `clean-code`, `design-patterns`, `solid-principles`).
 - Produces: Manifestos e testes atualizados reconhecendo as 5 skills em todas as IAs suportadas.
 
-- [ ] **Step 1: Atualizar `plugin.json` na raiz com as 5 skills**
+- [x] **Step 1: Atualizar `plugin.json` na raiz com as 5 skills**
 
 Atualizar a lista de `"skills"` em `plugin.json`:
 ```json
@@ -270,7 +270,7 @@ Atualizar a lista de `"skills"` em `plugin.json`:
 }
 ```
 
-- [ ] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
+- [x] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
 
 Atualizar os 4 manifestos para incluir as 5 skills (`../skills/clean-code`, `../skills/design-patterns`, `../skills/solid-principles`):
 - `.claude-plugin/plugin.json`
@@ -278,7 +278,7 @@ Atualizar os 4 manifestos para incluir as 5 skills (`../skills/clean-code`, `../
 - `.codex-plugin/plugin.json`
 - `.grok-plugin/plugin.json`
 
-- [ ] **Step 3: Atualizar `AGENTS.md`, `CLAUDE.md` e `GEMINI.md` com a taxonomia das 5 skills**
+- [x] **Step 3: Atualizar `AGENTS.md`, `CLAUDE.md` e `GEMINI.md` com a taxonomia das 5 skills**
 
 Em `AGENTS.md`, adicionar a descrição e gatilhos de ativação para:
 - `3. clean-code (skills/clean-code/SKILL.md)`: Legibilidade, DRY, KISS, YAGNI, refatoração de código, redução de complexidade ciclomática.
@@ -287,7 +287,7 @@ Em `AGENTS.md`, adicionar a descrição e gatilhos de ativação para:
 
 Atualizar `CLAUDE.md` e `GEMINI.md` para listar as 5 skills carregadas automaticamente.
 
-- [ ] **Step 4: Atualizar os scripts de validação (`validate-plugin.ps1` e `validate-plugin.sh`)**
+- [x] **Step 4: Atualizar os scripts de validação (`validate-plugin.ps1` e `validate-plugin.sh`)**
 
 Em `scripts/validate-plugin.ps1`:
 ```powershell
@@ -310,11 +310,11 @@ SKILLS=(
 )
 ```
 
-- [ ] **Step 5: Atualizar `README.md` raiz com o ecossistema completo de 5 skills**
+- [x] **Step 5: Atualizar `README.md` raiz com o ecossistema completo de 5 skills**
 
 Atualizar o diagrama arquitetural Mermaid e a tabela de skills no `README.md` raiz para apresentar detalhadamente as 5 competências do agente.
 
-- [ ] **Step 6: Executar a suíte de validação completa**
+- [x] **Step 6: Executar a suíte de validação completa**
 
 Executar:
 ```powershell
@@ -322,7 +322,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
 Expected: `[PASS] Skill valida: clean-code`, `[PASS] Skill valida: design-patterns`, `[PASS] Skill valida: solid-principles` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code 0.
 
-- [ ] **Step 7: Commit das atualizações de integração**
+- [x] **Step 7: Commit das atualizações de integração**
 
 ```bash
 git add plugin.json .claude-plugin/ .gemini-plugin/ .codex-plugin/ .grok-plugin/ AGENTS.md CLAUDE.md GEMINI.md README.md scripts/validate-plugin.*
@@ -340,7 +340,7 @@ git commit -m "feat(agent): register clean-code, design-patterns, and solid-prin
 - Consumes: Todo o repositório integrado.
 - Produces: Garantia de 0 links quebrados, scripts executáveis e sincronismo entre documentações.
 
-- [ ] **Step 1: Testar resolução de todos os links relativos citados entre as skills**
+- [x] **Step 1: Testar resolução de todos os links relativos citados entre as skills**
 
 Executar script PowerShell de verificação de links cruzados:
 ```powershell
@@ -362,7 +362,7 @@ foreach ($s in $skillsToCheck) {
 ```
 Expected: Todas as referências marcadas como `Link OK` sem erros.
 
-- [ ] **Step 2: Executar varredura rápida de segurança das novas skills**
+- [x] **Step 2: Executar varredura rápida de segurança das novas skills**
 
 Executar:
 ```powershell
@@ -370,7 +370,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-security-
 ```
 Expected: Exit code 0, 0 candidatos de falha.
 
-- [ ] **Step 3: Executar validação do plugin**
+- [x] **Step 3: Executar validação do plugin**
 
 Executar:
 ```powershell
@@ -378,7 +378,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
 Expected: `==> SUCESSO: Todos os componentes do agente foram validados!`
 
-- [ ] **Step 4: Commit de fechamento e registro**
+- [x] **Step 4: Commit de fechamento e registro**
 
 ```bash
 git add docs/superpowers/plans/
