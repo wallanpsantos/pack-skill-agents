@@ -8,6 +8,7 @@
   ],
   "skills": [
     "../skills/java-kotlin-security-audit",
+    "../skills/java-kotlin-concurrency",
     "../skills/concurrency-java21-review",
     "../skills/clean-code",
     "../skills/design-patterns",

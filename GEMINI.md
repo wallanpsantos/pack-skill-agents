@@ -6,6 +6,7 @@ As diretrizes completas de engenharia, concorrência e segurança estão em [AGE
 ## Skills Carregadas Automaticamente
 
 - `skills/java-kotlin-security-audit/SKILL.md`
+- `skills/java-kotlin-concurrency/SKILL.md`
 - `skills/concurrency-java21-review/SKILL.md`
 - `skills/clean-code/SKILL.md`
 - `skills/design-patterns/SKILL.md`

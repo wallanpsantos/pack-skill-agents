@@ -258,7 +258,7 @@ class UserService(
 imutáveis e não mantêm estado mutável interno são naturalmente *thread-safe*. No Spring Boot 4.1.1+ sobre Java 25 com
 Virtual Threads ativadas (`spring.threads.virtual.enabled: true`), esses serviços escalam sem contenção de locks ou
 pinning de carrier threads. Para diretrizes de concorrência,
-consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+consulte [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md).
 
 > [!NOTE]
 > Para manter funções pequenas e aplicar a Boy Scout Rule durante a refatoração do SRP, consulte o guia
@@ -1056,7 +1056,7 @@ no Spring Boot. Eles **nunca devem manter estado mutável em campos de instânci
 rodando sobre Virtual Threads do Java 25 (`spring.threads.virtual.enabled: true`), centenas de requisições simultâneas
 compartilham a mesma instância do serviço. Qualquer estado mutável deve residir no escopo local da chamada do método ou
 em estruturas concorrentes com controle explícito.
-Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+Consulte [java-kotlin-concurrency](../java-kotlin-concurrency/SKILL.md).
 
 ---
 
@@ -1107,8 +1107,7 @@ Utilize este checklist prático durante auditorias de código e revisões de Pul
   responsabilidade única, regras DRY, KISS, YAGNI e Boy Scout Rule.
 - **[Design Patterns](../design-patterns/SKILL.md)**: Implementações canônicas dos padrões GoF (Strategy, Factory
   Method, Adapter, Decorator, Builder) que concretizam os princípios SOLID.
-- **[Revisão de Concorrência Java 21/25](../concurrency-java21-review/SKILL.md)**: Regras essenciais para execução
-  thread-safe de serviços singleton sob Virtual Threads (Project Loom), locks e eliminação de thread pinning.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Boas práticas de segurança aplicadas
   à validação de domínio e controle de acesso (OWASP Top 10:2025).
 

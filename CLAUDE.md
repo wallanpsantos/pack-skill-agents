@@ -6,6 +6,7 @@ Consulte [AGENTS.md](./AGENTS.md) para a persona completa, stack tecnológica e 
 ## Skills Carregadas Automaticamente
 
 - `skills/java-kotlin-security-audit/SKILL.md`
+- `skills/java-kotlin-concurrency/SKILL.md`
 - `skills/concurrency-java21-review/SKILL.md`
 - `skills/clean-code/SKILL.md`
 - `skills/design-patterns/SKILL.md`
@@ -14,4 +15,5 @@ Consulte [AGENTS.md](./AGENTS.md) para a persona completa, stack tecnológica e 
 ## Comandos Rápidos
 
 - Pré-varredura de segurança: `bash skills/java-kotlin-security-audit/scripts/quick_scan.sh <diretório>`
+- Varredura de concorrência: `bash skills/java-kotlin-concurrency/scripts/scan-concurrency.sh <diretório>`
 - Validação do plugin: `bash scripts/validate-plugin.sh`

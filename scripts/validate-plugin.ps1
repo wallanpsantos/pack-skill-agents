@@ -53,6 +53,7 @@ foreach ($r in $rules)
 # 3. Validação de Skills
 $skills = @(
     "java-kotlin-security-audit",
+    "java-kotlin-concurrency",
     "concurrency-java21-review",
     "clean-code",
     "design-patterns",
