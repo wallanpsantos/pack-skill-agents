@@ -75,10 +75,10 @@ public record Email(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
+        value = value.trim().toLowerCase();
         if (!value.contains("@") || value.startsWith("@") || value.endsWith("@")) {
             throw new IllegalArgumentException("Invalid email format: " + value);
         }
-        value = value.trim().toLowerCase();
     }
 }
 
@@ -638,7 +638,7 @@ public enum OrderStatus {
                 return status;
             }
         }
-        return PENDING;
+        throw new IllegalArgumentException("Unknown order status: " + value);
     }
 }
 ```
@@ -665,6 +665,8 @@ public record CustomerResponse(
 Elimine cadeias de `instanceof` e casts manuais utilizando switch com padrões de tipo e guard clauses (`when`):
 
 ```java
+public sealed interface PaymentMethod permits CreditCardPayment, PixPayment, BoletoPayment {}
+
 public record CreditCardPayment(BigDecimal amount, String lastFourDigits) implements PaymentMethod {}
 public record PixPayment(BigDecimal amount, String pixKey) implements PaymentMethod {}
 public record BoletoPayment(BigDecimal amount, LocalDate expirationDate) implements PaymentMethod {}
@@ -755,7 +757,7 @@ Enriqueça tipos para legibilidade de negócio sem poluir o modelo original com 
 ```kotlin
 // Extensão clara e focada
 fun BigDecimal.toCurrencyString(currency: Currency = Currency.getInstance("BRL")): String {
-    return NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply {
+    return NumberFormat.getCurrencyInstance(Locale.of("pt", "BR")).apply {
         this.currency = currency
     }.format(this)
 }
