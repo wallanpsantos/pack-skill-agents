@@ -502,15 +502,30 @@ public class PaymentGatewayFactory {
     public PaymentGatewayFactory(List<PaymentGateway> gatewayList) {
         this.gateways = gatewayList.stream()
             .collect(Collectors.toUnmodifiableMap(
-                PaymentGateway::getProviderName,
+                gw -> gw.getProviderName().toUpperCase(Locale.ROOT),
                 Function.identity()
             ));
     }
 
     public PaymentGateway getGateway(String provider) {
-        return Optional.ofNullable(gateways.get(provider.toUpperCase()))
+        return Optional.ofNullable(gateways.get(provider.toUpperCase(Locale.ROOT)))
             .orElseThrow(() -> new IllegalArgumentException("Unknown payment provider: " + provider));
     }
+}
+```
+
+Equivalente em Kotlin 2.4+:
+
+```kotlin
+@Component
+class PaymentGatewayFactory(gatewayList: List<PaymentGateway>) {
+
+    private val gateways: Map<String, PaymentGateway> =
+        gatewayList.associateBy { it.providerName.uppercase() }
+
+    fun getGateway(provider: String): PaymentGateway =
+        gateways[provider.uppercase()]
+            ?: throw IllegalArgumentException("Unknown payment provider: $provider")
 }
 ```
 
