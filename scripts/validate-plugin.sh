@@ -51,7 +51,13 @@ for d in "${DOCS[@]}"; do
     echo "  [PASS] Documento presente: ${d}"
 done
 
-SKILLS=("java-kotlin-security-audit" "concurrency-java21-review")
+SKILLS=(
+    "java-kotlin-security-audit"
+    "concurrency-java21-review"
+    "clean-code"
+    "design-patterns"
+    "solid-principles"
+)
 for s in "${SKILLS[@]}"; do
     skill_file="${REPO_ROOT}/skills/${s}/SKILL.md"
     if [[ ! -f "${skill_file}" ]]; then
