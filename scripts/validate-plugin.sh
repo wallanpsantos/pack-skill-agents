@@ -21,9 +21,23 @@ for m in "${MANIFESTS[@]}"; do
     fi
     # Valida sintaxe JSON
     if command -v python3 > /dev/null 2>&1; then
-        python3 -m json.tool "${REPO_ROOT}/${m}" > /dev/null
+        if ! python3 -m json.tool "${REPO_ROOT}/${m}" > /dev/null 2>&1; then
+            echo "FALHA: JSON invalido em: ${m}" >&2
+            exit 1
+        fi
     elif command -v python > /dev/null 2>&1; then
-        python -m json.tool "${REPO_ROOT}/${m}" > /dev/null
+        if ! python -m json.tool "${REPO_ROOT}/${m}" > /dev/null 2>&1; then
+            echo "FALHA: JSON invalido em: ${m}" >&2
+            exit 1
+        fi
+    elif command -v jq > /dev/null 2>&1; then
+        if ! jq empty "${REPO_ROOT}/${m}" > /dev/null 2>&1; then
+            echo "FALHA: JSON invalido em: ${m}" >&2
+            exit 1
+        fi
+    else
+        echo "FALHA: Nenhum validador JSON disponivel (instale python3, python ou jq)" >&2
+        exit 1
     fi
     echo "  [PASS] JSON valido: ${m}"
 done
@@ -45,8 +59,8 @@ for s in "${SKILLS[@]}"; do
         exit 1
     fi
     # Verifica presenca do frontmatter YAML
-    if ! grep -q "^---" "${skill_file}"; then
-        echo "FALHA: Frontmatter ausente em: ${s}" >&2
+    if ! grep -q "^---" "${skill_file}" || ! grep -q "^name:" "${skill_file}" || ! grep -q "^description:" "${skill_file}"; then
+        echo "FALHA: Frontmatter YAML invalido em: ${s}" >&2
         exit 1
     fi
     echo "  [PASS] Skill valida: ${s}"
