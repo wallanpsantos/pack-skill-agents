@@ -6,16 +6,16 @@ Load when reviewing balances, ledgers, monetary arithmetic, or concurrency contr
 
 1. Never `double` / `float` for money.
 2. **`MathContext` is significant digits, not decimal places.** Using it as a scale limiter corrupts large values.
-   - Add/subtract are exact: **do not** pass a `MathContext` or a `RoundingMode`.
-   - Divide (and multiply when you must round) uses **explicit scale**:
-     `amount.divide(divisor, 6, RoundingMode.HALF_EVEN)`.
-   - `MathContext` only when the domain genuinely asks for significant-digit precision, with justification.
+    - Add/subtract are exact: **do not** pass a `MathContext` or a `RoundingMode`.
+    - Divide (and multiply when you must round) uses **explicit scale**:
+      `amount.divide(divisor, 6, RoundingMode.HALF_EVEN)`.
+    - `MathContext` only when the domain genuinely asks for significant-digit precision, with justification.
 3. Default intermediate precision: scale 6, unless the domain says otherwise.
 4. Concurrent balance/state mutations MUST use explicit concurrency control:
-   - **Default**: `@Version` (optimistic locking) + bounded retry with backoff, **outside the transaction**.
-   - **Accepted alternatives with explicit justification**: conditional atomic update, pessimistic lock
-     (`SELECT ... FOR UPDATE`), serializable transaction.
-   - The requirement is concurrency control on financial state — the mechanism may vary, it MUST NOT be absent.
+    - **Default**: `@Version` (optimistic locking) + bounded retry with backoff, **outside the transaction**.
+    - **Accepted alternatives with explicit justification**: conditional atomic update, pessimistic lock
+      (`SELECT ... FOR UPDATE`), serializable transaction.
+    - The requirement is concurrency control on financial state — the mechanism may vary, it MUST NOT be absent.
 5. Encapsulate amount + currency in an immutable `record` with fail-fast validation and normalized scale.
 6. In-memory concurrent structures (`LongAdder`, `AtomicLong`, `ConcurrentHashMap`) are never the source of truth for a
    balance.
@@ -26,13 +26,17 @@ Load when reviewing balances, ledgers, monetary arithmetic, or concurrency contr
 
 ```java
 BigDecimal balance = new BigDecimal("1500000.00");
-BigDecimal debit   = new BigDecimal("25.50");
+BigDecimal debit = new BigDecimal("25.50");
 
 // ❌ MathContext(6) = 6 SIGNIFICANT DIGITS → 1500000  (the debit silently vanishes)
-balance.subtract(debit, new MathContext(6, RoundingMode.HALF_EVEN));
+balance.
+
+subtract(debit, new MathContext(6, RoundingMode.HALF_EVEN));
 
 // ✅ subtraction is exact — no rounding argument at all
-balance.subtract(debit);                                  // 1499974.50
+        balance.
+
+subtract(debit);                                  // 1499974.50
 
 // ✅ when you must divide, fix the SCALE
 BigDecimal rate = amount.divide(divisor, 6, RoundingMode.HALF_EVEN);
@@ -43,6 +47,7 @@ BigDecimal rate = amount.divide(divisor, 6, RoundingMode.HALF_EVEN);
 ## 2. Optimistic locking (default)
 
 ```java
+
 @Entity
 public class Account {
     @Id
@@ -67,7 +72,7 @@ observable type is `ObjectOptimisticLockingFailureException` (a `OptimisticLocki
 // ❌ retry inside the transactional boundary, wrong exception type
 @Transactional
 @Retryable(retryFor = OptimisticLockException.class)
-public void debit(Long id, BigDecimal amount) { ... }
+public void debit(Long id, BigDecimal amount) { ...}
 
 // ✅ facade (non-transactional) retries; the transactional method is a separate bean
 @Service
@@ -119,7 +124,7 @@ Notes:
 // ✅ When optimistic locking overhead is not justified — requires explicit justification in review
 @Modifying(flushAutomatically = true, clearAutomatically = true) // JPQL bypasses the persistence context
 @Query("UPDATE Account a SET a.balance = a.balance - :amount, a.version = a.version + 1 "
-     + "WHERE a.id = :id AND a.balance >= :amount")
+        + "WHERE a.id = :id AND a.balance >= :amount")
 int debitAtomic(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
 // Caller MUST check the affected row count

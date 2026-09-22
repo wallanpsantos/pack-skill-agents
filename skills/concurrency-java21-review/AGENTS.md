@@ -24,7 +24,8 @@ migrar."*
 
 - **Java 21 LTS** é o target. Spring Boot >= 3.4.5.
 - É **estritamente proibido** utilizar flags `--enable-preview` ou APIs em estado Preview/Incubating.
-- `StructuredTaskScope` e `ScopedValue` (JEP 446) são APIs em preview no Java 21 — NUNCA recomende ou aceite seu uso. Qualquer ocorrência em código de produção é achado **Critical**.
+- `StructuredTaskScope` e `ScopedValue` (JEP 446) são APIs em preview no Java 21 — NUNCA recomende ou aceite seu uso.
+  Qualquer ocorrência em código de produção é achado **Critical**.
 
 ### 1.2 Thread Safety e Estado Compartilhado
 
@@ -49,21 +50,22 @@ migrar."*
 
 #### Internals da JVM (Mecanismo de Continuação)
 
-- Stacks de VTs vivem no **heap Java** (não em memória nativa/off-heap). Migração de platform threads para VTs
-  **desloca pressão de memória do off-heap para o heap** — aumente `-Xmx` proporcionalmente em containers.
+- Stacks de VTs vivem no **heap Java** (não em memória nativa/off-heap). Migração de platform threads para VTs **desloca
+  pressão de memória do off-heap para o heap** — aumente `-Xmx` proporcionalmente em containers.
 - O scheduler de VTs usa um `ForkJoinPool` **dedicado**, separado do `ForkJoinPool.commonPool()`. Tune com:
-  - `-Djdk.virtualThreadScheduler.parallelism=N` (padrão: número de processadores)
-  - `-Djdk.virtualThreadScheduler.maxPoolSize=256` (padrão: 256)
+    - `-Djdk.virtualThreadScheduler.parallelism=N` (padrão: número de processadores)
+    - `-Djdk.virtualThreadScheduler.maxPoolSize=256` (padrão: 256)
 
 #### Pinning (Java 21)
 
-- **No Java 21, `synchronized` em operações de I/O bloqueante PINA a carrier thread**. (JEP 491 — fix de pinning por `synchronized` — é uma funcionalidade do Java 24+ e está fora de escopo).
+- **No Java 21, `synchronized` em operações de I/O bloqueante PINA a carrier thread**. (JEP 491 — fix de pinning por
+  `synchronized` — é uma funcionalidade do Java 24+ e está fora de escopo).
 - Em Java 21, você DEVE substituir `synchronized` por `ReentrantLock` em caminhos que realizam I/O bloqueante sob VTs.
 - Pinning ocorre em Java 21 para:
-  - Bloco ou método `synchronized` ativo durante operações de I/O ou espera
-  - Chamadas nativas (JNI / FFM API)
-  - Class loading durante execução
-  - Alguns I/O de arquivo locais no Linux
+    - Bloco ou método `synchronized` ativo durante operações de I/O ou espera
+    - Chamadas nativas (JNI / FFM API)
+    - Class loading durante execução
+    - Alguns I/O de arquivo locais no Linux
 - Detecte pinning via JFR: `jdk.VirtualThreadPinned` (evitar `jdk.VirtualThreadSubmitFailed`).
 - Em dev, use `-Djdk.tracePinnedThreads=full` para diagnóstico detalhado de pinning.
 
@@ -74,12 +76,15 @@ migrar."*
 - EXIJA `Semaphore` ou mecanismos de rate limiting/backpressure para proteger APIs externas, bancos e brokers.
 - Alinhe as permissões do `Semaphore` com o `maximumPoolSize` do HikariCP.
 - Verifique capacidade de pools JDBC/HTTP e tamanhos de filas sob cenários de alta concorrência.
-- **HikariCP:** Em Java 21, o HikariCP mantém blocos `synchronized` internos (ex.: `getConnection()`) que pinam a carrier thread. Não existe versão do HikariCP que resolva isso no Java 21 (PR #2055 fechada sem merge). Mitigue alinhando permissões do `Semaphore` ao `maximumPoolSize` e monitorando pinning via JFR.
+- **HikariCP:** Em Java 21, o HikariCP mantém blocos `synchronized` internos (ex.: `getConnection()`) que pinam a
+  carrier thread. Não existe versão do HikariCP que resolva isso no Java 21 (PR #2055 fechada sem merge). Mitigue
+  alinhando permissões do `Semaphore` ao `maximumPoolSize` e monitorando pinning via JFR.
 
 ### 1.4 ThreadLocal e Contexto de Requisição
 
 - Em Java 21, `ScopedValue` (JEP 446) está em preview — seu uso em produção é **PROIBIDO**.
-- Para contexto de requisição em Java 21, utilize `ThreadLocal` com escopo curto e limpeza estritamente garantida via `remove()` dentro de um bloco `finally` (ou passe o contexto explicitamente como parâmetro/record).
+- Para contexto de requisição em Java 21, utilize `ThreadLocal` com escopo curto e limpeza estritamente garantida via
+  `remove()` dentro de um bloco `finally` (ou passe o contexto explicitamente como parâmetro/record).
 - **PROIBIDO** usar `ThreadLocal` como mecanismo de cache em código executado em Virtual Threads — causa explosão de
   inicializações (2000x+ documentado) e pressão de GC. Prefira pools explícitos ou caches por componente de aplicação.
 - NUNCA use `ThreadLocal` de longa duração sem `remove()` em `finally` com Virtual Threads.
@@ -137,12 +142,15 @@ migrar."*
     - Nomeação de threads
     - Métricas expostas (tamanho da fila, tarefas ativas, rejeições)
 - Executors customizados DEVEM ser fechados corretamente e ter observabilidade.
-- Em Spring Boot 3.4.5 com Java 21, o container pode usar Virtual Threads para requisições (`spring.threads.virtual.enabled=true`). Neste cenário, serviços síncronos são aceitáveis — use `CompletableFuture` apenas nas bordas com APIs já assíncronas.
+- Em Spring Boot 3.4.5 com Java 21, o container pode usar Virtual Threads para requisições
+  (`spring.threads.virtual.enabled=true`). Neste cenário, serviços síncronos são aceitáveis — use `CompletableFuture`
+  apenas nas bordas com APIs já assíncronas.
 - `SecurityContextHolder` é ThreadLocal-bound — use `DelegatingSecurityContextExecutorService` ou
   `DelegatingSecurityContextAsyncTaskExecutor` quando async precisa de auth.
 - **`InheritableThreadLocal` propagation mode** (`INHERITABLETHREADLOCAL`) copia o mapa na criação de cada VT —
   caro em escala. Prefira propagação explícita ou `DelegatingSecurityContext*`.
-- NUNCA coloque `@Transactional` em Controllers ou Adapters de infraestrutura.ode** (`INHERITABLETHREADLOCAL`) copia o mapa na criação de cada VT —
+- NUNCA coloque `@Transactional` em Controllers ou Adapters de infraestrutura.ode** (`INHERITABLETHREADLOCAL`) copia o
+  mapa na criação de cada VT —
   caro em escala. Prefira propagação explícita ou `DelegatingSecurityContext*`.
 - NUNCA coloque `@Transactional` em Controllers ou Adapters de infraestrutura.
 
@@ -167,24 +175,27 @@ Recomendações de migração por performance SÓ são válidas com evidência m
 - JFR com eventos `jdk.VirtualThreadPinned` e `jdk.VirtualThreadSubmitFailed`.
 - Dumps via `jcmd <PID> Thread.dump_to_file -format=json <FILE>` para inspecionar carriers sob carga.
 - Teoria ou benchmarks de terceiros NÃO substituem medição no ambiente real.
-- **Erros comuns de benchmark e antipadrões**: comparar VTs contra pool subdimensionado (artificialmente favorece VTs); medir só
-  throughput sem p99; não medir impacto em recursos downstream (DB wait time, pool saturation). Evite antipadrões como *"Tuning by Folklore"* (aplicar flags sem contexto) e *"Distracted by Shiny"* (migrar sem profiling) (Evans et al., Apêndice B).
+- **Erros comuns de benchmark e antipadrões**: comparar VTs contra pool subdimensionado (artificialmente favorece VTs);
+  medir só
+  throughput sem p99; não medir impacto em recursos downstream (DB wait time, pool saturation). Evite antipadrões como
+  *"Tuning by Folklore"* (aplicar flags sem contexto) e *"Distracted by Shiny"* (migrar sem profiling) (Evans et al.,
+  Apêndice B).
 
 ---
 
 ## 7. Observabilidade
 
 - Todo executor DEVE expor métricas via Micrometer/OTel utilizando os instrumentos adequados (Evans et al., Cap. 11):
-  - **Counter**: contagens de eventos monotonicamente crescentes (ex: tarefas executadas, exceções, rejeições).
-  - **Gauge**: estados instantâneos ou variáveis (ex: tamanho de fila, tarefas ativas).
-  - **Timer**: latências e durações de execução.
-  - **DistributionSummary**: distribuições numéricas e tamanhos de payload/batch.
+    - **Counter**: contagens de eventos monotonicamente crescentes (ex: tarefas executadas, exceções, rejeições).
+    - **Gauge**: estados instantâneos ou variáveis (ex: tamanho de fila, tarefas ativas).
+    - **Timer**: latências e durações de execução.
+    - **DistributionSummary**: distribuições numéricas e tamanhos de payload/batch.
 - JFR é obrigatório para diagnóstico de pinning e contenção em produção. Configure com overhead baixo.
 - Loggers DEVEM incluir thread name em padrões de log para rastreabilidade.
 - **Monitoramento padrão (Prometheus JVM metrics, VisualVM) mostra platform thread count (carriers)**, que permanece
   constante mesmo com milhões de VTs. Use JFR ou métricas customizadas para observar atividade real de VTs.
-- Use `jdk.VirtualThreadPinned` com threshold de 50ms para alertas; `jdk.VirtualThreadSubmitFailed` é crítico
-  (pool de carriers esgotado).
+- Use `jdk.VirtualThreadPinned` com threshold de 50ms para alertas; `jdk.VirtualThreadSubmitFailed` é crítico (pool de
+  carriers esgotado).
 
 ---
 
@@ -208,8 +219,10 @@ Recomendações de migração por performance SÓ são válidas com evidência m
 2. **Timeout e cancelamento**: Verificar que timeouts são respeitados e cancelamento propaga.
 3. **Consistência financeira**: Testes de débito/crédito concorrente com verificação de saldo final.
 4. **Retry em OptimisticLockException**: Confirmar convergência após retries.
-5. **Propagação de contexto**: Verificar que `SecurityContext` e `ThreadLocal` propagam e realizam cleanup (`remove()` em `finally`) corretamente.
-6. **Pinning**: JFR recording durante testes de carga para validar ausência de pinning por `synchronized` e native calls.
+5. **Propagação de contexto**: Verificar que `SecurityContext` e `ThreadLocal` propagam e realizam cleanup (`remove()`
+   em `finally`) corretamente.
+6. **Pinning**: JFR recording durante testes de carga para validar ausência de pinning por `synchronized` e native
+   calls.
 7. **Resource exhaustion**: Simular esgotamento de pool JDBC/HTTP com alta concorrência de VTs.
 
 ---
@@ -241,6 +254,8 @@ Ao atuar no projeto, consulte os arquivos especializados quando necessário:
 ## 11. Fontes e Referências de Literatura
 
 - **Rahman, A.N.M. Bazlur.** *Modern Concurrency in Java*. O'Reilly Media, 2026.
-  - Referência primária para Virtual Threads, Scoped Values, manipulação segura de estado e padrões modernos de execução concorrente em Java.
+    - Referência primária para Virtual Threads, Scoped Values, manipulação segura de estado e padrões modernos de
+      execução concorrente em Java.
 - **Evans, Benjamin J.; Gough, James; Newland, Chris.** *Optimizing Cloud Native Java*. O'Reilly Media, 2024.
-  - Referência primária para observabilidade com Micrometer, diagnósticos com JFR, antipadrões de performance e otimização de sistemas Java em nuvem.
+    - Referência primária para observabilidade com Micrometer, diagnósticos com JFR, antipadrões de performance e
+      otimização de sistemas Java em nuvem.

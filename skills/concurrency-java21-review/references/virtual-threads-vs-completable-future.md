@@ -3,11 +3,11 @@
 They are **not alternatives at the same layer**.
 
 |            | Virtual Thread                                | CompletableFuture                                          |
-|------------|-----------------------------------------------|-------------------------------------------------------------|
-| What it is | Lightweight execution carrier                 | Composition / async result API                              |
+|------------|-----------------------------------------------|------------------------------------------------------------|
+| What it is | Lightweight execution carrier                 | Composition / async result API                             |
 | Solves     | Cheap blocking, simple imperative concurrency | Pipelines, combinators, adapting async APIs                |
-| Style      | Sequential code that blocks                   | Callback / stage chaining                                   |
-| Best for   | I/O-bound throughput, readable business flow  | Combining independent async results, legacy Future bridges  |
+| Style      | Sequential code that blocks                   | Callback / stage chaining                                  |
+| Best for   | I/O-bound throughput, readable business flow  | Combining independent async results, legacy Future bridges |
 
 ---
 
@@ -49,15 +49,15 @@ CompletableFuture.supplyAsync(() -> userClient.fetch(id), vtExecutor)
 
 ## Reactive (WebFlux / Project Reactor) vs VTs
 
-| Scenario                                        | Prefer Reactive           | Prefer VTs                 |
-|-------------------------------------------------|---------------------------|----------------------------|
-| Streaming data (SSE, WebSocket, large files)    | ✅ Native backpressure     | ❌ No push model            |
-| High-frequency tiny event processing            | ✅ Event-loop efficiency   | ❌ More overhead            |
-| API gateway / non-blocking proxy                | ✅ Minimal overhead        | ❌                          |
-| Standard request/response (REST, gRPC)          | ❌ Unnecessary complexity  | ✅ Simpler code             |
-| Database-heavy CRUD                             | ❌ R2DBC complexity        | ✅ Plain JDBC works         |
-| Spring MVC / existing servlet codebase          | ❌ Migration cost          | ✅ Drop-in improvement      |
-| Team lacks reactive expertise                   | ❌                         | ✅ No paradigm shift needed |
+| Scenario                                     | Prefer Reactive           | Prefer VTs                  |
+|----------------------------------------------|---------------------------|-----------------------------|
+| Streaming data (SSE, WebSocket, large files) | ✅ Native backpressure    | ❌ No push model            |
+| High-frequency tiny event processing         | ✅ Event-loop efficiency  | ❌ More overhead            |
+| API gateway / non-blocking proxy             | ✅ Minimal overhead       | ❌                          |
+| Standard request/response (REST, gRPC)       | ❌ Unnecessary complexity | ✅ Simpler code             |
+| Database-heavy CRUD                          | ❌ R2DBC complexity       | ✅ Plain JDBC works         |
+| Spring MVC / existing servlet codebase       | ❌ Migration cost         | ✅ Drop-in improvement      |
+| Team lacks reactive expertise                | ❌                        | ✅ No paradigm shift needed |
 
 > **Mixing:** VTs can call JDBC from inside a reactive Flux producer. Use `Flux.create` with a VT to bridge blocking
 > JDBC into a reactive stream without blocking the event loop.
@@ -89,11 +89,16 @@ platformThreadExecutor.submit(() -> {
 
 ## Amdahl's Law Evaluation Framework
 
-Before choosing between Virtual Threads, CompletableFuture, or parallel execution paradigms, apply **Amdahl's Law** to evaluate speedup potential:
+Before choosing between Virtual Threads, CompletableFuture, or parallel execution paradigms, apply **Amdahl's Law** to
+evaluate speedup potential:
 
-$$T(N) = S + \frac{1}{N}(T - S)$$
+$$T (N) = S + \frac{1}{N} (T - S)$$
 
-where $T$ is total sequential execution time, $S$ is the serial fraction (inherently non-parallelizable portion), and $N$ is the concurrency level. Recommending parallel execution (VTs or CFs) requires proving that the serial fraction $S$ is small enough to warrant the added complexity (Evans et al., Ch. 13; Rahman, Ch. 1). If $S$ dominates (e.g., sequential DB queries, locks, synchronous serialization), adding concurrency via VTs or CFs yields diminishing returns while introducing context switching and coordination overhead.
+where $T$ is total sequential execution time, $S$ is the serial fraction (inherently non-parallelizable portion),
+and $N$ is the concurrency level. Recommending parallel execution (VTs or CFs) requires proving that the serial
+fraction $S$ is small enough to warrant the added complexity (Evans et al., Ch. 13; Rahman, Ch. 1). If $S$ dominates
+(e.g., sequential DB queries, locks, synchronous serialization), adding concurrency via VTs or CFs yields diminishing
+returns while introducing context switching and coordination overhead.
 
 ---
 
@@ -102,7 +107,8 @@ where $T$ is total sequential execution time, $S$ is the serial fraction (inhere
 1. **Is the work I/O-bound and you control the code?** → Virtual Thread, imperative style.
 2. **Do you need to compose heterogeneous async APIs?** → CompletableFuture (+ VT executor if stages block).
 3. **CPU-bound parallel compute?** → Neither as primary: sized platform pool / FJP; CF optional for joining results.
-4. **Spring MVC already on VT (Boot 3.4.5+ + Java 21, spring.threads.virtual.enabled=true)?** → Keep controller/service synchronous; let the container use VTs.
+4. **Spring MVC already on VT (Boot 3.4.5+ + Java 21, spring.threads.virtual.enabled=true)?** → Keep controller/service
+   synchronous; let the container use VTs.
    Add CF only at integration edges that are already async.
 5. **Streaming / high-frequency events?** → Evaluate reactive (WebFlux). VTs do not provide push-based backpressure.
 

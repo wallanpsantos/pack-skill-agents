@@ -12,13 +12,15 @@ Baseline: Java 25, Spring Boot >= 4.1.1 on Spring Framework >= 7.0.8.
 @Service
 public class EmailService {
     @Async
-    public void sendEmail(String to) { }
+    public void sendEmail(String to) {
+    }
 }
 
 // ✅
 @Configuration
 @EnableAsync
-public class AsyncConfig { }
+public class AsyncConfig {
+}
 ```
 
 ---
@@ -32,7 +34,8 @@ public void processOrder(Order order) {
 }
 
 @Async
-public void sendConfirmation(Order order) { }
+public void sendConfirmation(Order order) {
+}
 
 // ✅ call through another bean
 public void processOrder(Order order) {
@@ -47,11 +50,13 @@ public void processOrder(Order order) {
 ```java
 // ❌ private/protected — the proxy cannot intercept
 @Async
-private void processInBackground() { }
+private void processInBackground() {
+}
 
 // ✅ must be public
 @Async
-public void processInBackground() { }
+public void processInBackground() {
+}
 ```
 
 ---
@@ -106,6 +111,7 @@ must stay responsive. Choose the rejection policy deliberately.
 ### Option 1: DelegatingSecurityContextExecutorService (recommended)
 
 ```java
+
 @Bean(destroyMethod = "shutdown")
 public Executor taskExecutor() {
     ExecutorService vtExec = Executors.newVirtualThreadPerTaskExecutor();
@@ -116,6 +122,7 @@ public Executor taskExecutor() {
 ### Option 2: DelegatingSecurityContextAsyncTaskExecutor
 
 ```java
+
 @Bean
 public Executor taskExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -129,14 +136,25 @@ public Executor taskExecutor() {
 
 ```java
 SecurityContext ctx = SecurityContextHolder.getContext();
-Thread.ofVirtual().name("bg-", 0).start(() -> {
-    SecurityContextHolder.setContext(ctx);
-    try {
-        doWork();
-    } finally {
-        SecurityContextHolder.clearContext(); // mandatory
+Thread.
+
+ofVirtual().
+
+name("bg-",0).
+
+start(() ->{
+        SecurityContextHolder.
+
+setContext(ctx);
+    try{
+
+doWork();
+    }finally{
+            SecurityContextHolder.
+
+clearContext(); // mandatory
     }
-});
+            });
 ```
 
 ### `ScopedValue` does not cross this boundary either
@@ -152,6 +170,7 @@ here. For any work that leaves the request thread, pass an immutable context `re
 ## 7. Executor Observability (Mandatory)
 
 ```java
+
 @Bean(destroyMethod = "shutdown")
 public ThreadPoolTaskExecutor taskExecutor(MeterRegistry registry) {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

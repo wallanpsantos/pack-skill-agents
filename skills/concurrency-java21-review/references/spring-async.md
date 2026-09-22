@@ -90,7 +90,10 @@ public Executor taskExecutor() {
 
 ## 5. SecurityContext Does Not Propagate
 
-`SecurityContextHolder` is `ThreadLocal`-bound. Auth context is lost across thread boundaries. In Java 21, use `DelegatingSecurityContextExecutorService` (Option 1), `DelegatingSecurityContextAsyncTaskExecutor` (Option 2), or explicit context propagation with cleanup (Option 3). Note: `ScopedValue` is preview in Java 21 (JEP 446) and prohibited in production code.
+`SecurityContextHolder` is `ThreadLocal`-bound. Auth context is lost across thread boundaries. In Java 21, use
+`DelegatingSecurityContextExecutorService` (Option 1), `DelegatingSecurityContextAsyncTaskExecutor` (Option 2), or
+explicit context propagation with cleanup (Option 3). Note: `ScopedValue` is preview in Java 21 (JEP 446) and prohibited
+in production code.
 
 ### Option 1: DelegatingSecurityContextExecutorService (Recommended)
 
@@ -129,13 +132,15 @@ Thread.ofVirtual().start(() -> {
 ```
 
 > **Warning:** `INHERITABLETHREADLOCAL` propagation mode (`spring.security.strategy=INHERITABLETHREADLOCAL`) copies
-> the ITL map at VT creation time — expensive at scale (Rahman, 2026, Ch. 7). Prefer explicit propagation or `DelegatingSecurityContext*`.
+> the ITL map at VT creation time — expensive at scale (Rahman, 2026, Ch. 7). Prefer explicit propagation or
+> `DelegatingSecurityContext*`.
 
 ---
 
 ## 6. Executor Observability (Mandatory)
 
-Every custom executor MUST expose metrics and be properly managed using appropriate Micrometer meter types (Evans et al., 2024, Ch. 11):
+Every custom executor MUST expose metrics and be properly managed using appropriate Micrometer meter types (Evans et
+al., 2024, Ch. 11):
 
 ```java
 @Bean(destroyMethod = "shutdown")
@@ -158,6 +163,7 @@ public ThreadPoolTaskExecutor taskExecutor(MeterRegistry registry) {
 ```
 
 Required metrics & Micrometer meter types (Evans et al., 2024, Ch. 11):
+
 - Active tasks count (`Gauge`)
 - Queue size / capacity (`Gauge`)
 - Completed and rejected task counts (`Counter`)
@@ -253,5 +259,7 @@ public class NotificationService {
 
 ## 10. References & Literature
 
-- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Chapter 7: Context Propagation & Thread Safety).
-- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024. (Chapter 11: Application Observability & Micrometer Metrics).
+- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Chapter 7: Context Propagation & Thread
+  Safety).
+- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024. (Chapter 11:
+  Application Observability & Micrometer Metrics).

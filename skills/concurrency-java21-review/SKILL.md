@@ -34,11 +34,16 @@ Spring Boot >= 3.4.5. No preview/incubating APIs.
 
 Progress:
 
-- [ ]    1. Scope — identify shared mutable state, entry points, thread boundaries
-- [ ]    2. Baseline — reject preview/incubating APIs; confirm Spring Boot >= 3.4.5 if Spring is present
-- [ ]    3. Checklist pass — walk High → Medium → Modern items below
-- [ ]    4. Deep dive — load only the reference files that match findings
-- [ ]    5. Report — emit findings in the output format below
+- [ ]    
+    1. Scope — identify shared mutable state, entry points, thread boundaries
+- [ ]    
+    2. Baseline — reject preview/incubating APIs; confirm Spring Boot >= 3.4.5 if Spring is present
+- [ ]    
+    3. Checklist pass — walk High → Medium → Modern items below
+- [ ]    
+    4. Deep dive — load only the reference files that match findings
+- [ ]    
+    5. Report — emit findings in the output format below
 
 ### Step 1 — Scope
 
@@ -79,7 +84,8 @@ Map:
 - [ ] No `double`/`float` for money; no `BigDecimal` arithmetic without `RoundingMode`
 - [ ] No concurrency logic based on `ConcurrentHashMap.size()` / `isEmpty()` (estimates)
 - [ ] `InterruptedException` not swallowed — restored or propagated
-- [ ] No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with task count — often thousands of initializations/sec vs. one)
+- [ ] No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with
+  task count — often thousands of initializations/sec vs. one)
 - [ ] `thenApplyAsync` / `supplyAsync` without explicit executor when work is blocking (defaults to `commonPool`)
 - [ ] No JNI/native calls in hot VT paths without understanding pinning implications
 
@@ -97,19 +103,26 @@ Map:
 - [ ] `InheritableThreadLocal` not used for propagation at VT scale (expensive map copy per VT)
 - [ ] `OptimisticLockException` has retry policy (with documented max attempts and backoff)
 - [ ] `Semaphore` / backpressure protecting downstream resources under VT concurrency
-- [ ] Semaphore permits aligned with HikariCP `maximumPoolSize` — `Semaphore.acquire()` parks the VT (unmounts carrier); waiting inside HikariCP's `synchronized` getConnection() pins it. Permits == pool size ensures permit-holders never block inside the monitor.
-- [ ] Executor has observability with proper Micrometer instruments: `Counter` (counts/events), `Gauge` (queue size/active tasks), `Timer` (latency/durations), `DistributionSummary` (payload sizes/histograms) (Evans et al., Ch. 11)
+- [ ] Semaphore permits aligned with HikariCP `maximumPoolSize` — `Semaphore.acquire()` parks the VT (unmounts carrier);
+  waiting inside HikariCP's `synchronized` getConnection () pins it. Permits == pool size ensures permit-holders never
+  block inside the monitor.
+- [ ] Executor has observability with proper Micrometer instruments: `Counter` (counts/events), `Gauge` (queue
+  size/active tasks), `Timer` (latency/durations), `DistributionSummary` (payload sizes/histograms) (Evans et al., Ch.
+  11)
 - [ ] `@Async` executor configured with rejection policy, naming, and metrics
-- [ ] No performance antipatterns present, such as "Tuning by Folklore" (applying flags/tunings without context) or "Distracted by Shiny" (adopting VTs without profiling) (Evans et al., App. B)
+- [ ] No performance antipatterns present, such as "Tuning by Folklore" (applying flags/tunings without context) or
+  "Distracted by Shiny" (adopting VTs without profiling) (Evans et al., App. B)
 - [ ] JFR enabled in production for VT workloads (`jdk.VirtualThreadPinned`)
 
 #### Modern (Java 21 defaults)
 
 - [ ] Virtual Threads for I/O-bound work (never pooled; one per task)
 - [ ] CPU-bound work stays on platform threads / ForkJoinPool (VTs yield or delegate CPU work)
-- [ ] Request context via `ThreadLocal` com `remove()` garantido em `finally` (ou passagem explícita via parâmetro/record)
+- [ ] Request context via `ThreadLocal` com `remove()` garantido em `finally` (ou passagem explícita via
+  parâmetro/record)
 - [ ] `ReentrantLock` instead of `synchronized` when lock holds blocking I/O
-- [ ] Library pinning check: audit dependencies with internal `synchronized` (e.g. HikariCP `getConnection()` pins VTs on Java 21; mitigate via `Semaphore` and JFR monitoring)
+- [ ] Library pinning check: audit dependencies with internal `synchronized` (e.g. HikariCP `getConnection()` pins VTs
+  on Java 21; mitigate via `Semaphore` and JFR monitoring)
 - [ ] VT migration backed by benchmark evidence (not theory); p95/p99 measured
 - [ ] JFR events monitored for pinning (`jdk.VirtualThreadPinned`)
 - [ ] Kubernetes: `-Xmx` increased to account for VT stacks on heap
@@ -118,15 +131,15 @@ Map:
 
 ### Step 4 — Load references on demand
 
-| If you find…                                                  | Read                                                                                                              |
-|---------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| Virtual Threads, pinning, JVM internals, resource limits      | [references/virtual-threads.md](references/virtual-threads.md)                                                   |
-| `@Async`, EnableAsync, SecurityContext, executor config       | [references/spring-async.md](references/spring-async.md)                                                         |
-| `CompletableFuture` chains, timeouts, executors               | [references/completable-future.md](references/completable-future.md)                                             |
-| Race, visibility, deadlock, DCL, locks, CHM, interruption     | [references/classic-issues.md](references/classic-issues.md)                                                     |
-| Balance, BigDecimal, `@Version`, optimistic lock              | [references/financial-consistency.md](references/financial-consistency.md)                                       |
-| VT vs CF choice, reactive vs VT                               | [references/virtual-threads-vs-completable-future.md](references/virtual-threads-vs-completable-future.md)       |
-| Kubernetes, GraalVM Native Image, container config, JFR cloud | [references/cloud-native-concurrency.md](references/cloud-native-concurrency.md)                                 |
+| If you find…                                                  | Read                                                                                                       |
+|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| Virtual Threads, pinning, JVM internals, resource limits      | [references/virtual-threads.md](references/virtual-threads.md)                                             |
+| `@Async`, EnableAsync, SecurityContext, executor config       | [references/spring-async.md](references/spring-async.md)                                                   |
+| `CompletableFuture` chains, timeouts, executors               | [references/completable-future.md](references/completable-future.md)                                       |
+| Race, visibility, deadlock, DCL, locks, CHM, interruption     | [references/classic-issues.md](references/classic-issues.md)                                               |
+| Balance, BigDecimal, `@Version`, optimistic lock              | [references/financial-consistency.md](references/financial-consistency.md)                                 |
+| VT vs CF choice, reactive vs VT                               | [references/virtual-threads-vs-completable-future.md](references/virtual-threads-vs-completable-future.md) |
+| Kubernetes, GraalVM Native Image, container config, JFR cloud | [references/cloud-native-concurrency.md](references/cloud-native-concurrency.md)                           |
 
 Do not load all references up front.
 
@@ -166,8 +179,10 @@ Severity:
   `-Xmx` in containers — VT stack frames now count against the heap budget.
 - **VT scheduler:** uses a dedicated `ForkJoinPool` separate from `commonPool`. Tuning `commonPool` does NOT affect
   VT scheduling. Use `-Djdk.virtualThreadScheduler.parallelism=N` to tune.
-- **Pinning in Java 21:** `synchronized` on blocking operations **always pins** the carrier thread (JEP 491 is Java 24+ — out of scope). Always prefer `ReentrantLock` when locks hold blocking I/O.
-- **What pins in Java 21:** `synchronized` active during blocking operations, JNI/native methods, FFM API calls, class loading during execution, some Linux file I/O operations. Detect with `jdk.VirtualThreadPinned` JFR event.
+- **Pinning in Java 21:** `synchronized` on blocking operations **always pins** the carrier thread (JEP 491 is Java
+  24+ — out of scope). Always prefer `ReentrantLock` when locks hold blocking I/O.
+- **What pins in Java 21:** `synchronized` active during blocking operations, JNI/native methods, FFM API calls, class
+  loading during execution, some Linux file I/O operations. Detect with `jdk.VirtualThreadPinned` JFR event.
 - **VT properties:** VTs are always daemon threads (cannot change); always `NORM_PRIORITY` (priority changes ignored).
   Name them for observability via `Thread.ofVirtual().name(prefix, start).start(...)`.
 - `CompletableFuture.supplyAsync` without executor uses `ForkJoinPool.commonPool` — wrong for blocking I/O.
@@ -176,8 +191,10 @@ Severity:
 - `@Async` self-invocation bypasses proxy — runs synchronously with no error.
 - Default Spring `@Async` executor is unbounded thread-per-task (OOM risk). In Spring Boot 3.4.5 + Java 21, synchronous
   services on VT container are preferred; use CF only at async integration edges.
-- `ThreadLocal` under millions of VTs retains heap until thread ends; always clear with `remove()` in `finally` (or pass context as explicit record parameters). `ScopedValue` is preview in Java 21 (JEP 446) — prohibited in production code.
-- No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with task count — often thousands of initializations/sec vs. one)
+- `ThreadLocal` under millions of VTs retains heap until thread ends; always clear with `remove()` in `finally` (or pass
+  context as explicit record parameters). `ScopedValue` is preview in Java 21 (JEP 446) — prohibited in production code.
+- No `ThreadLocal` used as cache in Virtual Thread code paths (per-VT initialization cost and GC pressure scale with
+  task count — often thousands of initializations/sec vs. one)
 - `InheritableThreadLocal` copies the entire map at VT creation — expensive at scale. Avoid or pass context explicitly.
 - `map.size()` / `isEmpty()` on `ConcurrentHashMap` are estimates — never gate financial logic on them.
 - Nested `ConcurrentHashMap.compute` — non-atomic state and reentrant access risk. Prohibited in production.
@@ -189,7 +206,9 @@ Severity:
 - CPU-bound work on VTs can monopolize carriers — use `Thread.yield()` periodically or delegate to `ForkJoinPool`.
 - Kubernetes: set CPU `limits` so JVM reads correct processor count; set liveness probes on app health, not thread
   count (carrier threads are idle during low traffic with VTs).
-- HikariCP VT safety in Java 21: HikariCP retains internal `synchronized` blocks (PR #2055 was closed without merge). No version resolves pinning in Java 21 — mitigate by aligning `Semaphore` permits with `maximumPoolSize` and monitoring `jdk.VirtualThreadPinned`.
+- HikariCP VT safety in Java 21: HikariCP retains internal `synchronized` blocks (PR #2055 was closed without merge). No
+  version resolves pinning in Java 21 — mitigate by aligning `Semaphore` permits with `maximumPoolSize` and monitoring
+  `jdk.VirtualThreadPinned`.
 
 ## Analysis Commands
 
@@ -213,18 +232,20 @@ grep -rn "System.loadLibrary\|native " --include="*.java"
 | Compose async results / adapt legacy Future APIs | `CompletableFuture` on a VT executor or dedicated pool                            |
 | Request context across VTs                       | `ThreadLocal` com `remove()` em `finally` (ou parâmetro explícito)                |
 | Mutable per-thread state (short-lived)           | `ThreadLocal` with `remove()` in `finally`                                        |
-| Lock around blocking I/O                         | `ReentrantLock` with `tryLock(timeout)` (not `synchronized`)                     |
+| Lock around blocking I/O                         | `ReentrantLock` with `tryLock(timeout)` (not `synchronized`)                      |
 | Shared money/balance                             | `@Version` + retry on `OptimisticLockException` (alternatives with justification) |
 | CPU-bound parallel work                          | Platform threads / `ForkJoinPool`                                                 |
 | Downstream resource protection with VTs          | `Semaphore` with permits aligned to resource pool size                            |
-| VT migration recommendation                      | Only with benchmark evidence (throughput + p95/p99 + downstream metrics)         |
-| Streaming data / push model                      | Reactive (WebFlux/Reactor) — VTs do not provide push-based backpressure          |
-| SecurityContext with VTs                         | `DelegatingSecurityContextExecutorService` wrapping VT executor                  |
+| VT migration recommendation                      | Only with benchmark evidence (throughput + p95/p99 + downstream metrics)          |
+| Streaming data / push model                      | Reactive (WebFlux/Reactor) — VTs do not provide push-based backpressure           |
+| SecurityContext with VTs                         | `DelegatingSecurityContextExecutorService` wrapping VT executor                   |
 
 ## References & Literature
 
-- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Foundational text for Java concurrency, Virtual Threads, and execution models).
-- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024. (Foundational text for cloud-native performance, JVM tuning, Micrometer metrics, and performance antipatterns).
+- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Foundational text for Java concurrency,
+  Virtual Threads, and execution models).
+- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024.
+  (Foundational text for cloud-native performance, JVM tuning, Micrometer metrics, and performance antipatterns).
 
 ## Related Skills
 

@@ -337,15 +337,21 @@ Itens concretos de crypto-agility para revisar:
 
 - NIST — [Post-Quantum Cryptography Standardization Project](https://csrc.nist.gov/pqc-standardization)
 -
+
 NIST — [FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)](https://csrc.nist.gov/pubs/fips/203/final)
+
 - NIST — [FIPS 204: Module-Lattice-Based Digital Signature Standard (ML-DSA)](https://csrc.nist.gov/pubs/fips/204/final)
 -
+
 NIST — [FIPS 205: Stateless Hash-Based Digital Signature Standard (SLH-DSA)](https://csrc.nist.gov/pubs/fips/205/final)
+
 - OpenJDK — [JEP 496: Quantum-Resistant Module-Lattice-Based Key Encapsulation Mechanism](https://openjdk.org/jeps/496)
 - OpenJDK — [JEP 497: Quantum-Resistant Module-Lattice-Based Digital Signature Algorithm](https://openjdk.org/jeps/497)
 - OpenJDK — [JEP 527: Hybrid Key Exchange in TLS 1.3](https://openjdk.org/jeps/527)
 -
+
 NSA — [Announcing the Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)](https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/3148990/nsa-releases-future-quantum-resistant-qr-algorithm-requirements-for-national-se/)
+
 - Bouncy Castle — [bouncycastle.org](https://www.bouncycastle.org/) (documentação de API e PQC Almanac)
 - PCI Security Standards Council — [Document Library](https://www.pcisecuritystandards.org/document_library) (PCI DSS
   4.0, Requisito 12.3.3)

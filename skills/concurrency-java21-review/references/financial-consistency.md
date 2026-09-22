@@ -5,9 +5,11 @@ Load when reviewing balances, ledgers, monetary arithmetic, or concurrency contr
 ## Rules (non-negotiable)
 
 1. Never `double` / `float` for money.
-2. Every `BigDecimal` multiply/divide uses explicit `RoundingMode` (and scale/MathContext as needed) (Rahman, 2026, Ch. 3; Evans et al., 2024, Ch. 8).
+2. Every `BigDecimal` multiply/divide uses explicit `RoundingMode` (and scale/MathContext as needed) (Rahman, 2026, Ch.
+   3; Evans et al., 2024, Ch. 8).
 3. Prefer 6 decimal places for intermediate precision unless domain says otherwise.
-4. Concurrent balance/state mutations MUST use explicit concurrency control (Rahman, 2026, Ch. 5; Evans et al., 2024, Ch. 12):
+4. Concurrent balance/state mutations MUST use explicit concurrency control (Rahman, 2026, Ch. 5; Evans et al., 2024,
+   Ch. 12):
     - **Default**: `@Version` (optimistic locking) + retry with backoff on `OptimisticLockException`.
     - **Accepted alternatives with explicit justification**: atomic database update
       (`UPDATE ... SET balance = balance - ? WHERE balance >= ?`), pessimistic lock (`SELECT ... FOR UPDATE`),
@@ -53,7 +55,9 @@ public void debit(Long accountId, BigDecimal amount) {
 }
 ```
 
-Document max attempts and backoff. Do not swallow `OptimisticLockException`. Under high contention, optimistic retries can cause retry storms; monitor DB contention and latency metrics (Evans et al., 2024, Ch. 12) or switch to atomic updates / pessimistic locks when contention is predictably high (Rahman, 2026, Ch. 5).
+Document max attempts and backoff. Do not swallow `OptimisticLockException`. Under high contention, optimistic retries
+can cause retry storms; monitor DB contention and latency metrics (Evans et al., 2024, Ch. 12) or switch to atomic
+updates / pessimistic locks when contention is predictably high (Rahman, 2026, Ch. 5).
 
 ## Alternative: Atomic database update
 
@@ -133,5 +137,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## References & Literature
 
-- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Chapter 3: Safe Data Representation & Chapter 5: Optimistic Concurrency Controls).
-- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024. (Chapter 8: Numerical Precision & Chapter 12: Database Contention, Retries, and High-Throughput Tradeoffs).
+- Rahman, A.N.M. Bazlur. *Modern Concurrency in Java*. O'Reilly Media, 2026. (Chapter 3: Safe Data Representation &
+  Chapter 5: Optimistic Concurrency Controls).
+- Evans, Benjamin J., James Gough, and Chris Newland. *Optimizing Cloud Native Java*. O'Reilly Media, 2024. (Chapter 8:
+  Numerical Precision & Chapter 12: Database Contention, Retries, and High-Throughput Tradeoffs).

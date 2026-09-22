@@ -52,7 +52,7 @@ below to that platform, and do not generate findings framed as if they applied t
 
 ## Workflow
 
-1. Identify the language(s) in scope (Java, Kotlin, or both) and confirm the runtime target is server-side JVM — see
+1. Identify the language (s) in scope (Java, Kotlin, or both) and confirm the runtime target is server-side JVM — see
    "Out of scope" above.
 2. Scope shared mutable state, thread/coroutine boundaries, I/O under locks, money mutations, downstream pools (JDBC,
    HTTP, brokers).
@@ -69,28 +69,29 @@ below to that platform, and do not generate findings framed as if they applied t
 
 ### Decision table (defaults)
 
-| Situation | Default |
-|-----------|---------|
-| I/O-bound work you control (Java or idiomatic Kotlin) | Imperative code on Virtual Threads (one VT per task) |
-| Compose existing async APIs (Java) | CompletableFuture over a shared VT executor |
-| Compose many independent suspend/reactive APIs (Kotlin, WebFlux/R2DBC or coroutine-first codebase) | Kotlin coroutines (`suspend`, `coroutineScope`) with an explicit `CoroutineDispatcher` |
-| Kotlin structured fan-out you own | `coroutineScope` / `supervisorScope` — stable in Kotlin, unrelated to Java's preview `StructuredTaskScope` |
-| Blocking Java/JDBC call from inside a coroutine | `withContext(Dispatchers.IO)`, or a Virtual-Thread-backed dispatcher — never block the coroutine's current dispatcher directly |
-| Mutual exclusion inside a coroutine | `Mutex` (suspending) — never `synchronized` / `ReentrantLock` around a suspension point |
-| CPU-bound parallel compute | Dedicated, sized platform-thread executor (never `commonPool` for heavy work; never `Dispatchers.IO` in Kotlin) |
-| CPU burst inside a VT path or a coroutine | Move the burst to the CPU executor / `Dispatchers.Default`. `Thread.yield()` is a documented stopgap only |
-| Request context, same dynamic scope (Java) | `ScopedValue` (final in Java 25) |
-| Request context across coroutine dispatcher switches (Kotlin) | `CoroutineContext` element (`ThreadContextElement`) — read `ThreadLocal`-bound state *before* the first suspension point, not after |
-| Request context across forked threads (Java) | Explicit propagation (parameter / context `record`) — see note below |
-| Mutable short-lived per-thread state | `ThreadLocal` with `remove()` in `finally` |
-| Lock that may wait on I/O | `ReentrantLock` + `tryLock(timeout)` |
-| Shared money / balance | `@Version` + retry **outside** the transaction (same rule in Java and Kotlin) |
-| Downstream protection under VTs or coroutines | `Semaphore` (Java) / `kotlinx.coroutines.sync.Semaphore` (Kotlin) on the scarce resource, permits <= pool size, timeout-bounded acquire |
-| Streaming / push backpressure | Reactive, or Kotlin `Flow` with `buffer()`/`conflate()` — VTs have no push model |
-| Spring MVC on Boot 4 + Java 25, blocking style | Sync services; `spring.threads.virtual.enabled=true`; CF only at async edges; plain blocking Kotlin needs no coroutines here |
+| Situation                                                                                          | Default                                                                                                                                 |
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| I/O-bound work you control (Java or idiomatic Kotlin)                                              | Imperative code on Virtual Threads (one VT per task)                                                                                    |
+| Compose existing async APIs (Java)                                                                 | CompletableFuture over a shared VT executor                                                                                             |
+| Compose many independent suspend/reactive APIs (Kotlin, WebFlux/R2DBC or coroutine-first codebase) | Kotlin coroutines (`suspend`, `coroutineScope`) with an explicit `CoroutineDispatcher`                                                  |
+| Kotlin structured fan-out you own                                                                  | `coroutineScope` / `supervisorScope` — stable in Kotlin, unrelated to Java's preview `StructuredTaskScope`                              |
+| Blocking Java/JDBC call from inside a coroutine                                                    | `withContext(Dispatchers.IO)`, or a Virtual-Thread-backed dispatcher — never block the coroutine's current dispatcher directly          |
+| Mutual exclusion inside a coroutine                                                                | `Mutex` (suspending) — never `synchronized` / `ReentrantLock` around a suspension point                                                 |
+| CPU-bound parallel compute                                                                         | Dedicated, sized platform-thread executor (never `commonPool` for heavy work; never `Dispatchers.IO` in Kotlin)                         |
+| CPU burst inside a VT path or a coroutine                                                          | Move the burst to the CPU executor / `Dispatchers.Default`. `Thread.yield()` is a documented stopgap only                               |
+| Request context, same dynamic scope (Java)                                                         | `ScopedValue` (final in Java 25)                                                                                                        |
+| Request context across coroutine dispatcher switches (Kotlin)                                      | `CoroutineContext` element (`ThreadContextElement`) — read `ThreadLocal`-bound state *before* the first suspension point, not after     |
+| Request context across forked threads (Java)                                                       | Explicit propagation (parameter / context `record`) — see note below                                                                    |
+| Mutable short-lived per-thread state                                                               | `ThreadLocal` with `remove()` in `finally`                                                                                              |
+| Lock that may wait on I/O                                                                          | `ReentrantLock` + `tryLock(timeout)`                                                                                                    |
+| Shared money / balance                                                                             | `@Version` + retry **outside** the transaction (same rule in Java and Kotlin)                                                           |
+| Downstream protection under VTs or coroutines                                                      | `Semaphore` (Java) / `kotlinx.coroutines.sync.Semaphore` (Kotlin) on the scarce resource, permits <= pool size, timeout-bounded acquire |
+| Streaming / push backpressure                                                                      | Reactive, or Kotlin `Flow` with `buffer()`/`conflate()` — VTs have no push model                                                        |
+| Spring MVC on Boot 4 + Java 25, blocking style                                                     | Sync services; `spring.threads.virtual.enabled=true`; CF only at async edges; plain blocking Kotlin needs no coroutines here            |
 
 **Preview boundary.** `StructuredTaskScope` was still preview in Java 25 (JEP 505) and remains in preview after it.
-Reject it while that holds; revisit when it goes final. Stable substitute — `Executors.newVirtualThreadPerTaskExecutor()`
+Reject it while that holds; revisit when it goes final. Stable substitute —
+`Executors.newVirtualThreadPerTaskExecutor()`
 in try-with-resources **with explicit cancellation** (see `references/virtual-threads.md` §3.1), or CF with timeout plus
 a terminal handler. **Kotlin's `coroutineScope`/`supervisorScope` are not affected by this ban** — they are a different,
 already-stable mechanism (`references/kotlin-coroutines.md` §5), not a Kotlin wrapper around `StructuredTaskScope`.
@@ -147,7 +148,8 @@ When writing code:
 - Nested `ConcurrentHashMap.compute`
 - Financial logic gated on `ConcurrentHashMap.size()` / `isEmpty()`
 - `@Async` not public or self-invoked
-- Preview, incubating, or `jdk.internal.*` APIs; unjustified Kotlin `@ExperimentalCoroutinesApi` / `@DelicateCoroutinesApi`
+- Preview, incubating, or `jdk.internal.*` APIs; unjustified Kotlin `@ExperimentalCoroutinesApi` /
+  `@DelicateCoroutinesApi`
 - Money as `double`/`float`; `BigDecimal` divide without scale + `RoundingMode` (Java or Kotlin's `/` operator);
   `MathContext` used as a scale limiter
 - Balance mutation without concurrency control; optimistic-lock retry placed inside the transaction
@@ -220,18 +222,23 @@ When this skill runs standalone, use:
 ## Revisão de Concorrência: [arquivo ou componente]
 
 ### Crítico
+
 - [problema] — [localização] — [impacto] — [correção objetiva]
 
 ### Risco sob carga
+
 - [problema] — [localização] — [cenário de falha] — [correção objetiva]
 
 ### Oportunidades Java 25 / Kotlin 2.4+
+
 - [melhoria] — [justificativa técnica]
 
 ### Boas práticas observadas
+
 - [achado positivo]
 
 ### Riscos operacionais
+
 - [pinning residual, saturação downstream, timeout, cancelamento, memória, observabilidade, consistência ou dispatcher/coroutine errado]
 ```
 
@@ -251,17 +258,17 @@ both `*.java` and `*.kt` sources.
 
 ## References (load on demand)
 
-| Finding | File |
-|---------|------|
-| Virtual Threads, pinning, ScopedValue, cancellation, resource limits | `references/virtual-threads.md` |
-| `@Async`, SecurityContext, VT container | `references/spring-async.md` |
-| CF chains, timeouts, executors | `references/completable-future.md` |
-| Races, visibility, deadlocks, locks, CHM | `references/classic-issues.md` |
-| Money, `@Version`, optimistic lock | `references/financial-consistency.md` |
-| VT vs CF vs reactive vs FJP | `references/virtual-threads-vs-completable-future.md` |
-| CPU parallelism, sized executors, parallelStream | `references/parallelism.md` |
-| Kubernetes, GraalVM, JFR, file descriptors | `references/cloud-native-concurrency.md` |
-| Kotlin coroutines, Dispatchers, structured concurrency, Mutex, Flow, VT/CF interop, build compatibility | `references/kotlin-coroutines.md` |
+| Finding                                                                                                 | File                                                  |
+|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| Virtual Threads, pinning, ScopedValue, cancellation, resource limits                                    | `references/virtual-threads.md`                       |
+| `@Async`, SecurityContext, VT container                                                                 | `references/spring-async.md`                          |
+| CF chains, timeouts, executors                                                                          | `references/completable-future.md`                    |
+| Races, visibility, deadlocks, locks, CHM                                                                | `references/classic-issues.md`                        |
+| Money, `@Version`, optimistic lock                                                                      | `references/financial-consistency.md`                 |
+| VT vs CF vs reactive vs FJP                                                                             | `references/virtual-threads-vs-completable-future.md` |
+| CPU parallelism, sized executors, parallelStream                                                        | `references/parallelism.md`                           |
+| Kubernetes, GraalVM, JFR, file descriptors                                                              | `references/cloud-native-concurrency.md`              |
+| Kotlin coroutines, Dispatchers, structured concurrency, Mutex, Flow, VT/CF interop, build compatibility | `references/kotlin-coroutines.md`                     |
 
 Classic JVM-level concerns — shared-mutable-state races, visibility, deadlocks, Virtual Thread internals and pinning,
 CPU-bound parallelism internals, and Kubernetes/cloud-native configuration — apply identically to Kotlin classes on the

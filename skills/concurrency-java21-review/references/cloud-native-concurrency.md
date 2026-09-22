@@ -47,8 +47,8 @@ resources:
     cpu: "500m"
 ```
 
-VT carrier pool default parallelism = `Runtime.availableProcessors()`. In a container with CPU throttling,
-**set a ceiling** to avoid scheduler starvation:
+VT carrier pool default parallelism = `Runtime.availableProcessors()`. In a container with CPU throttling, **set a
+ceiling** to avoid scheduler starvation:
 
 ```bash
 -Djdk.virtualThreadScheduler.parallelism=4   # explicit, not derived from throttled CPU
@@ -59,7 +59,8 @@ VT carrier pool default parallelism = `Runtime.availableProcessors()`. In a cont
 
 ## 3. Single-CPU Container Allocation Warning
 
-Containers configured with 1 CPU or fractional CPUs (e.g., `cpu: "1"` or `cpu: "500m"`) cause JVM ergonomics to default to single-threaded garbage collection (`SerialGC` / `SerialOldGC`) on many JDK distributions.
+Containers configured with 1 CPU or fractional CPUs (e.g., `cpu: "1"` or `cpu: "500m"`) cause JVM ergonomics to default
+to single-threaded garbage collection (`SerialGC` / `SerialOldGC`) on many JDK distributions.
 
 ```yaml
 # ❌ Single CPU limit → JVM selects SerialGC, killing concurrent throughput
@@ -78,9 +79,13 @@ resources:
 ```
 
 ### Impact of Single CPU Allocation
-- **GC Performance Fallback:** `SerialGC` performs single-threaded Stop-The-World (STW) pauses, leading to extreme latency spikes during GC cycles.
-- **Destroyed Throughput:** Virtual Threads and carrier pools rely on multi-core scheduling. Single-CPU containers prevent parallelism and amplify carrier contention.
-- **Rule:** Always allocate **>= 2 CPUs** for containerized Java workloads running concurrent pipelines or Virtual Threads (Evans et al., 2024, Ch. 9).
+
+- **GC Performance Fallback:** `SerialGC` performs single-threaded Stop-The-World (STW) pauses, leading to extreme
+  latency spikes during GC cycles.
+- **Destroyed Throughput:** Virtual Threads and carrier pools rely on multi-core scheduling. Single-CPU containers
+  prevent parallelism and amplify carrier contention.
+- **Rule:** Always allocate **>= 2 CPUs** for containerized Java workloads running concurrent pipelines or Virtual
+  Threads (Evans et al., 2024, Ch. 9).
 
 ---
 
@@ -113,11 +118,11 @@ readinessProbe:
 
 ## 5. Horizontal Scaling vs. VT Vertical Scaling
 
-| Scaling Type           | When Appropriate                                         |
-|------------------------|----------------------------------------------------------|
-| **Vertical (VTs)**     | I/O-bound workloads; more concurrent requests per pod    |
-| **Horizontal (HPA)**   | CPU-bound workloads; geo-distribution; fault isolation   |
-| **Both together**      | I/O-bound with high total throughput requirements        |
+| Scaling Type         | When Appropriate                                       |
+|----------------------|--------------------------------------------------------|
+| **Vertical (VTs)**   | I/O-bound workloads; more concurrent requests per pod  |
+| **Horizontal (HPA)** | CPU-bound workloads; geo-distribution; fault isolation |
+| **Both together**    | I/O-bound with high total throughput requirements      |
 
 > Do NOT eliminate horizontal scaling because VTs improved per-pod throughput. Use both strategies together.
 > VTs improve concurrency within a pod; HPA scales across pods.
@@ -130,12 +135,12 @@ GraalVM Native Image **fully supports Virtual Threads** (since GraalVM 21+).
 
 ### Constraints
 
-| Constraint                                | Impact                                        | Mitigation                                   |
-|-------------------------------------------|-----------------------------------------------|----------------------------------------------|
-| Dynamic class loading during VT execution | May pin carrier (class-loading pinning)       | Pre-load critical classes at startup          |
-| JNI / native calls inside VTs             | Pin carriers (same as JVM)                    | Minimize JNI in hot VT paths                 |
-| AOT compilation (no JIT)                  | Faster startup; potentially lower peak TPS    | Benchmark both modes; tune GraalVM PGO       |
-| Reflection/proxy classes                  | Must be declared in `reflect-config.json`     | Use `-agentlib:native-image-agent` to capture|
+| Constraint                                | Impact                                     | Mitigation                                    |
+|-------------------------------------------|--------------------------------------------|-----------------------------------------------|
+| Dynamic class loading during VT execution | May pin carrier (class-loading pinning)    | Pre-load critical classes at startup          |
+| JNI / native calls inside VTs             | Pin carriers (same as JVM)                 | Minimize JNI in hot VT paths                  |
+| AOT compilation (no JIT)                  | Faster startup; potentially lower peak TPS | Benchmark both modes; tune GraalVM PGO        |
+| Reflection/proxy classes                  | Must be declared in `reflect-config.json`  | Use `-agentlib:native-image-agent` to capture |
 
 ```java
 // ✅ Pre-load at startup to avoid class-loading pinning at runtime
@@ -179,20 +184,24 @@ java -XX:StartFlightRecording=name=production,\
 
 ### Containerized JFR Buffer Configuration: `maxsize` vs. `maxage`
 
-- **`maxage`:** Retains recording data up to a time window (e.g., `maxage=1h`). On its own, `maxage` provides **no memory or disk cap**. During high activity bursts (e.g., VT allocations, locking spikes), data volume can explode.
-- **`maxsize`:** Enforces a strict upper bound on the ring buffer size (e.g., `maxsize=500m`). When reached, oldest events are dropped.
+- **`maxage`:** Retains recording data up to a time window (e.g., `maxage=1h`). On its own, `maxage` provides **no
+  memory or disk cap**. During high activity bursts (e.g., VT allocations, locking spikes), data volume can explode.
+- **`maxsize`:** Enforces a strict upper bound on the ring buffer size (e.g., `maxsize=500m`). When reached, oldest
+  events are dropped.
 
-> **Critical Warning:** Running continuous JFR in containers with `maxage` but **without `maxsize`** can cause unrestricted disk or off-heap memory growth during activity bursts, triggering cgroup container OOM-kills (`OOMKilled`) (Evans et al., 2024, Ch. 12). Always specify `maxsize`.
+> **Critical Warning:** Running continuous JFR in containers with `maxage` but **without `maxsize`** can cause
+> unrestricted disk or off-heap memory growth during activity bursts, triggering cgroup container OOM-kills (`OOMKilled`)
+> (Evans et al., 2024, Ch. 12). Always specify `maxsize`.
 
 Key JFR events for VT workloads:
 
-| Event                              | Production Priority | What to Alert On                        |
-|------------------------------------|---------------------|-----------------------------------------|
-| `jdk.VirtualThreadPinned`         | High                | Count > 0 with threshold > 50ms         |
-| `jdk.VirtualThreadSubmitFailed`   | Critical            | Any occurrence                          |
-| `jdk.GarbageCollection`           | Medium              | P99 GC pause > SLA threshold            |
-| `jdk.MonitorEnter`                 | Medium              | Long contention on hot monitors         |
-| `jdk.ThreadStart` / `ThreadEnd`   | Low                 | Platform thread count change            |
+| Event                           | Production Priority | What to Alert On                |
+|---------------------------------|---------------------|---------------------------------|
+| `jdk.VirtualThreadPinned`       | High                | Count > 0 with threshold > 50ms |
+| `jdk.VirtualThreadSubmitFailed` | Critical            | Any occurrence                  |
+| `jdk.GarbageCollection`         | Medium              | P99 GC pause > SLA threshold    |
+| `jdk.MonitorEnter`              | Medium              | Long contention on hot monitors |
+| `jdk.ThreadStart` / `ThreadEnd` | Low                 | Platform thread count change    |
 
 ---
 
@@ -236,5 +245,7 @@ Monitor with JFR `jdk.FileRead` / `jdk.FileWrite` events or OS `lsof | wc -l`.
 
 ## 10. References & Citations
 
-- **Evans, B. J., Gough, J., & Newland, C.** (2024). *Optimizing Cloud Native Java: Efficient Microservices in Kubernetes and Cloud Environments*. O'Reilly Media. (Chapters 9, 12).
-- **Rahman, A.N.M. Bazlur** (2026). *Modern Concurrency in Java: Multi-threading, Virtual Threads, and Structured Concurrency*. O'Reilly Media.
+- **Evans, B. J., Gough, J., & Newland, C.** (2024). *Optimizing Cloud Native Java: Efficient Microservices in
+  Kubernetes and Cloud Environments*. O'Reilly Media. (Chapters 9, 12).
+- **Rahman, A.N.M. Bazlur** (2026). *Modern Concurrency in Java: Multi-threading, Virtual Threads, and Structured
+  Concurrency*. O'Reilly Media.

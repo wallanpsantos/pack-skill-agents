@@ -118,11 +118,11 @@ future.thenApplyAsync(result -> blockingTransform(result));
 future.thenApplyAsync(result -> blockingTransform(result), vtExecutor);
 ```
 
-| Work Type                                | Executor                                                  |
-|------------------------------------------|-----------------------------------------------------------|
-| Blocking I/O                             | VT executor (shared) or dedicated I/O pool                |
-| CPU-bound                                | Sized platform pool / FJP — not commonPool for heavy load |
-| Fire-and-forget I/O without composition  | `Thread.ofVirtual().start(...)` — skip CF                 |
+| Work Type                               | Executor                                                  |
+|-----------------------------------------|-----------------------------------------------------------|
+| Blocking I/O                            | VT executor (shared) or dedicated I/O pool                |
+| CPU-bound                               | Sized platform pool / FJP — not commonPool for heavy load |
+| Fire-and-forget I/O without composition | `Thread.ofVirtual().start(...)` — skip CF                 |
 
 ---
 
@@ -146,9 +146,13 @@ future.join(); // hangs indefinitely if remote call stalls
 ### 5.1 `parallelStream()` Hazards
 
 `parallelStream()` is frequently misused as a quick concurrency fix, leading to major performance and stability hazards:
-- **Shared Pool Saturation**: `parallelStream()` implicitly executes on `ForkJoinPool.commonPool()`. Invoking blocking I/O inside a parallel stream starves shared common pool threads across the entire application.
-- **Amdahl's Law Overhead**: On small collections or tasks with high serial fraction ($S$), thread splitting and task submission overhead outweigh parallel execution gains (Evans et al., Ch. 13; Rahman, Ch. 7).
-- **Lack of Execution Control**: `parallelStream()` does not support custom executors (without fragile hacks), timeouts, or fine-grained error handlers.
+
+- **Shared Pool Saturation**: `parallelStream()` implicitly executes on `ForkJoinPool.commonPool()`. Invoking blocking
+  I/O inside a parallel stream starves shared common pool threads across the entire application.
+- **Amdahl's Law Overhead**: On small collections or tasks with high serial fraction ($S$), thread splitting and task
+  submission overhead outweigh parallel execution gains (Evans et al., Ch. 13; Rahman, Ch. 7).
+- **Lack of Execution Control**: `parallelStream()` does not support custom executors (without fragile hacks), timeouts,
+  or fine-grained error handlers.
 
 ```java
 // ❌ ANTI-PATTERN — blocking I/O inside parallelStream saturates commonPool

@@ -1,21 +1,39 @@
 # Modernização e Alinhamento das Skills Clean Code, Design Patterns e SOLID Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:
+> executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Modernizar e alinhar as skills `clean-code`, `design-patterns` e `solid-principles` ao baseline tecnológico Java 25 LTS, Kotlin 2.4+ e Spring Boot 4.1.1+, garantindo paridade idiomática entre Java e Kotlin, preservando o foco primordial de cada disciplina (sem transformá-las em tutoriais de framework) e estabelecendo uma malha de referências cruzadas explícita ("o que uma não cobrir referencia a outra").
+**Goal:** Modernizar e alinhar as skills `clean-code`, `design-patterns` e `solid-principles` ao baseline tecnológico
+Java 25 LTS, Kotlin 2.4+ e Spring Boot 4.1.1+, garantindo paridade idiomática entre Java e Kotlin, preservando o foco
+primordial de cada disciplina (sem transformá-las em tutoriais de framework) e estabelecendo uma malha de referências
+cruzadas explícita ("o que uma não cobrir referencia a outra").
 
-**Architecture:** Cada skill atua como autoridade em seu próprio domínio conceitual, oferecendo exemplos canônicos espelhados em Java 25 e Kotlin 2.4. Violações conceituais ou necessidades arquiteturais adjacentes são delegadas explicitamente às skills parceiras através de links markdown relativos. Os manifestos de plugin universal e de cada IA (`.claude-plugin/`, `.gemini-plugin/`, `.codex-plugin/`, `.grok-plugin/`), bem como o orquestrador `AGENTS.md` e a suíte `scripts/validate-plugin.*`, são expandidos para cobrir as 5 skills oficiais do agente.
+**Architecture:** Cada skill atua como autoridade em seu próprio domínio conceitual, oferecendo exemplos canônicos
+espelhados em Java 25 e Kotlin 2.4. Violações conceituais ou necessidades arquiteturais adjacentes são delegadas
+explicitamente às skills parceiras através de links markdown relativos. Os manifestos de plugin universal e de cada IA
+(`.claude-plugin/`, `.gemini-plugin/`, `.codex-plugin/`, `.grok-plugin/`), bem como o orquestrador `AGENTS.md` e a suíte
+`scripts/validate-plugin.*`, são expandidos para cobrir as 5 skills oficiais do agente.
 
-**Tech Stack:** Java 25 LTS (Records, Compact Constructors, Pattern Matching, Sealed Interfaces, Text Blocks), Kotlin 2.4+ (Data Classes, Value Classes, Extension Functions, Class Delegation `by`, Sealed Hierarchies, Null-Safety), Spring Boot 4.1.1+ (Spring Framework 7.0, Constructor Injection estrito, ProblemDetail), Markdown (`agentskills.io` spec), JSON, PowerShell e Bash.
+**Tech Stack:** Java 25 LTS (Records, Compact Constructors, Pattern Matching, Sealed Interfaces, Text Blocks), Kotlin
+2.4+ (Data Classes, Value Classes, Extension Functions, Class Delegation `by`, Sealed Hierarchies, Null-Safety), Spring
+Boot 4.1.1+ (Spring Framework 7.0, Constructor Injection estrito, ProblemDetail), Markdown (`agentskills.io` spec),
+JSON, PowerShell e Bash.
 
 ## Global Constraints
 
-- **Preservação de Escopo Conceitual:** Não descaracterizar as skills com foco excessivo em frameworks; cada skill cumpre rigorosamente seu papel (Clean Code = legibilidade/DRY/KISS/refatoração; Design Patterns = soluções GoF e estruturais idiomáticas; SOLID = princípios de design orientado a objetos na JVM).
-- **Paridade de Linguagens:** Todos os conceitos centrais devem apresentar implementações canônicas tanto em Java 25 quanto em Kotlin 2.4+.
-- **Rede de Referências Cruzadas:** O que pertence ao escopo de outra skill deve ser referenciado explicitamente via link relativo Markdown (ex: violações de SRP em Clean Code apontam para `skills/solid-principles/SKILL.md`; refatoração de condicionais para Strategy aponta para `skills/design-patterns/SKILL.md`).
-- **Validade Formal dos Manifestos:** Todos os manifestos JSON (`plugin.json` e `.<IA>-plugin/plugin.json`) devem ser JSON RFC 8259 válido, sem comentários e sem trailing commas.
+- **Preservação de Escopo Conceitual:** Não descaracterizar as skills com foco excessivo em frameworks; cada skill
+  cumpre rigorosamente seu papel (Clean Code = legibilidade/DRY/KISS/refatoração; Design Patterns = soluções GoF e
+  estruturais idiomáticas; SOLID = princípios de design orientado a objetos na JVM).
+- **Paridade de Linguagens:** Todos os conceitos centrais devem apresentar implementações canônicas tanto em Java 25
+  quanto em Kotlin 2.4+.
+- **Rede de Referências Cruzadas:** O que pertence ao escopo de outra skill deve ser referenciado explicitamente via
+  link relativo Markdown (ex: violações de SRP em Clean Code apontam para `skills/solid-principles/SKILL.md`;
+  refatoração de condicionais para Strategy aponta para `skills/design-patterns/SKILL.md`).
+- **Validade Formal dos Manifestos:** Todos os manifestos JSON (`plugin.json` e `.<IA>-plugin/plugin.json`) devem ser
+  JSON RFC 8259 válido, sem comentários e sem trailing commas.
 - **Conformidade `agentskills.io`:** Todas as skills devem manter frontmatter YAML estrito com `name` e `description`.
-- **Validação Cross-Platform:** Scripts de validação (`validate-plugin.ps1` e `validate-plugin.sh`) devem validar as 5 skills com código de saída 0.
+- **Validação Cross-Platform:** Scripts de validação (`validate-plugin.ps1` e `validate-plugin.sh`) devem validar as 5
+  skills com código de saída 0.
 
 ---
 
@@ -51,16 +69,20 @@ scripts/
 ### Task 1: Modernização e Paridade Java/Kotlin na Skill `clean-code`
 
 **Files:**
+
 - Modify: `skills/clean-code/SKILL.md`
 - Modify: `skills/clean-code/README.md`
 
 **Interfaces:**
+
 - Consumes: Conceitos fundamentais de Clean Code, DRY, KISS, YAGNI, Boy Scout Rule, Guard Clauses, Naming Conventions.
-- Produces: Skill completa com exemplos espelhados em Java 25 e Kotlin 2.4+, eliminando referências desatualizadas a Java 15/16 e adicionando referências cruzadas a `skills/solid-principles` e `skills/design-patterns`.
+- Produces: Skill completa com exemplos espelhados em Java 25 e Kotlin 2.4+, eliminando referências desatualizadas a
+  Java 15/16 e adicionando referências cruzadas a `skills/solid-principles` e `skills/design-patterns`.
 
 - [x] **Step 1: Atualizar `skills/clean-code/SKILL.md` com suporte idiomático a Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/clean-code/SKILL.md`:
+
 1. **Frontmatter YAML:**
    ```yaml
    ---
@@ -69,31 +91,43 @@ Garantir no `skills/clean-code/SKILL.md`:
    ---
    ```
 2. **DRY, KISS, YAGNI com exemplos bivalentes:**
-   - Java 25: validação de email / domínio encapsulada em `record` com compact constructor; uso de guard clauses.
-   - Kotlin 2.4: validação usando `value class` ou extensão; expressões concisas evitando boilerplates sem cair em code golf.
+    - Java 25: validação de email / domínio encapsulada em `record` com compact constructor; uso de guard clauses.
+    - Kotlin 2.4: validação usando `value class` ou extensão; expressões concisas evitando boilerplates sem cair em code
+      golf.
 3. **Naming & Functions:**
-   - Funções pequenas com nível único de abstração.
-   - Paridade Java (métodos expressivos, retorno tipado com `Optional` sem anti-pattern) e Kotlin (funções de extensão bem dosadas, evitar cadeias de `let`/`apply`/`also` obscuras).
+    - Funções pequenas com nível único de abstração.
+    - Paridade Java (métodos expressivos, retorno tipado com `Optional` sem anti-pattern) e Kotlin (funções de extensão
+      bem dosadas, evitar cadeias de `let`/`apply`/`also` obscuras).
 4. **Substituição da seção Java 15/16 por "Modern JVM Clean Code Patterns (Java 25 LTS & Kotlin 2.4)":**
-   - Java 25: `record` para data carriers imutáveis; Pattern Matching para `switch` com guard clauses (`when`); Sequenced Collections (`getFirst()`, `getLast()`).
-   - Kotlin 2.4: `data class` com `val`; `value class` para combate à Primitive Obsession; smart casting idiomático; `sealed interface` para modelagem fechada.
+    - Java 25: `record` para data carriers imutáveis; Pattern Matching para `switch` com guard clauses (`when`);
+      Sequenced Collections (`getFirst()`, `getLast()`).
+    - Kotlin 2.4: `data class` com `val`; `value class` para combate à Primitive Obsession; smart casting idiomático;
+      `sealed interface` para modelagem fechada.
 5. **Seção explícita de Referências Cruzadas ("Skills Relacionadas"):**
-   - Se uma função violar o Princípio da Responsabilidade Única (SRP) ou necessitar de inversão de dependência: referenciar [`../solid-principles/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/solid-principles/SKILL.md).
-   - Se um bloco condicional exigir refatoração para Strategy, Factory ou State: referenciar [`../design-patterns/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/design-patterns/SKILL.md).
-   - Se a refatoração envolver concorrência ou Virtual Threads: referenciar [`../concurrency-java21-review/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/concurrency-java21-review/SKILL.md).
-   - Se envolver validação de segurança ou sanitização de entrada: referenciar [`../java-kotlin-security-audit/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/java-kotlin-security-audit/SKILL.md).
+    - Se uma função violar o Princípio da Responsabilidade Única (SRP) ou necessitar de inversão de dependência:
+      referenciar [
+      `../solid-principles/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/solid-principles/SKILL.md).
+    - Se um bloco condicional exigir refatoração para Strategy, Factory ou State: referenciar [
+      `../design-patterns/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/design-patterns/SKILL.md).
+    - Se a refatoração envolver concorrência ou Virtual Threads: referenciar [
+      `../concurrency-java21-review/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/concurrency-java21-review/SKILL.md).
+    - Se envolver validação de segurança ou sanitização de entrada: referenciar [
+      `../java-kotlin-security-audit/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/java-kotlin-security-audit/SKILL.md).
 
 - [x] **Step 2: Atualizar `skills/clean-code/README.md`**
 
-Refletir o escopo atualizado (Java 25 LTS + Kotlin 2.4+) no `skills/clean-code/README.md`, adicionando a matriz de conceitos e links para as demais skills.
+Refletir o escopo atualizado (Java 25 LTS + Kotlin 2.4+) no `skills/clean-code/README.md`, adicionando a matriz de
+conceitos e links para as demais skills.
 
 - [x] **Step 3: Testar integridade do frontmatter e links do `clean-code`**
 
 Executar no PowerShell:
+
 ```powershell
 $c = Get-Content skills/clean-code/SKILL.md -Raw
 if ($c -match "(?s)^---\s*name:\s*clean-code\s*description:") { Write-Output "Frontmatter: PASS" } else { Write-Error "Frontmatter: FAIL" }
 ```
+
 Expected: `Frontmatter: PASS`.
 
 - [x] **Step 4: Commit das alterações de `clean-code`**
@@ -108,16 +142,20 @@ git commit -m "feat(clean-code): align with Java 25 and Kotlin 2.4 idioms with c
 ### Task 2: Modernização e Padrões Idiomáticos na Skill `design-patterns`
 
 **Files:**
+
 - Modify: `skills/design-patterns/SKILL.md`
 - Modify: `skills/design-patterns/README.md`
 
 **Interfaces:**
+
 - Consumes: Padrões GoF (Criacionais, Estruturais, Comportamentais), Regras de Domínio Financeiro (`BigDecimal`).
-- Produces: Catálogo idiomático onde cada padrão é resolvido em Java 25 e Kotlin 2.4, vinculando-se aos princípios SOLID e Clean Code.
+- Produces: Catálogo idiomático onde cada padrão é resolvido em Java 25 e Kotlin 2.4, vinculando-se aos princípios SOLID
+  e Clean Code.
 
 - [x] **Step 1: Atualizar `skills/design-patterns/SKILL.md` com padrões em Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/design-patterns/SKILL.md`:
+
 1. **Frontmatter YAML:**
    ```yaml
    ---
@@ -126,33 +164,48 @@ Garantir no `skills/design-patterns/SKILL.md`:
    ---
    ```
 2. **Padrões Criacionais (Java 25 & Kotlin 2.4):**
-   - **Builder:** Java 25 (Fluent Builder com validação no `build()` e imutabilidade) vs Kotlin (argumentos nomeados com valores default para dados simples; DSL Builder com `@DslMarker` para estruturas aninhadas complexas).
-   - **Factory Method:** Java 25 (Static factories em `record`/interfaces com pattern matching `switch`) vs Kotlin (Companion object factory functions e funções top-level).
-   - **Singleton:** Java 25 (Spring managed singleton ou Enum thread-safe) vs Kotlin (`object` thread-safe nativo da JVM).
+    - **Builder:** Java 25 (Fluent Builder com validação no `build()` e imutabilidade) vs Kotlin (argumentos nomeados
+      com valores default para dados simples; DSL Builder com `@DslMarker` para estruturas aninhadas complexas).
+    - **Factory Method:** Java 25 (Static factories em `record`/interfaces com pattern matching `switch`) vs Kotlin
+      (Companion object factory functions e funções top-level).
+    - **Singleton:** Java 25 (Spring managed singleton ou Enum thread-safe) vs Kotlin (`object` thread-safe nativo da
+      JVM).
 3. **Padrões Comportamentais (Java 25 & Kotlin 2.4):**
-   - **Strategy:** Java 25 (`@FunctionalInterface` ou `sealed interface` com pattern matching) vs Kotlin (First-class functions `(T) -> R` ou `fun interface`).
-   - **Observer:** Java 25 (Spring Boot 4.1.1+ `ApplicationEventPublisher` / `@EventListener`) vs Kotlin (`Delegates.observable` ou Spring Events idiomáticos).
-   - **Template Method:** Java 25 (Abstrações herdadas com métodos finais) vs Kotlin (Higher-Order Functions com trailing lambdas, preferindo composição sobre herança).
+    - **Strategy:** Java 25 (`@FunctionalInterface` ou `sealed interface` com pattern matching) vs Kotlin (First-class
+      functions `(T) -> R` ou `fun interface`).
+    - **Observer:** Java 25 (Spring Boot 4.1.1+ `ApplicationEventPublisher` / `@EventListener`) vs Kotlin
+      (`Delegates.observable` ou Spring Events idiomáticos).
+    - **Template Method:** Java 25 (Abstrações herdadas com métodos finais) vs Kotlin (Higher-Order Functions com
+      trailing lambdas, preferindo composição sobre herança).
 4. **Padrões Estruturais (Java 25 & Kotlin 2.4):**
-   - **Decorator:** Java 25 (Composição de interfaces com delegação explícita) vs Kotlin (Class delegation nativa via keyword `by`).
-   - **Adapter:** Java 25 (Adapter wrapper clássico) vs Kotlin (Extension functions para mapeamento ou object adapter).
+    - **Decorator:** Java 25 (Composição de interfaces com delegação explícita) vs Kotlin (Class delegation nativa via
+      keyword `by`).
+    - **Adapter:** Java 25 (Adapter wrapper clássico) vs Kotlin (Extension functions para mapeamento ou object adapter).
 5. **Regra Monetária Inviolável:**
-   - Manter e reforçar: `BigDecimal` e `CurrencyUnit`, arredondamento explícito (`RoundingMode.HALF_EVEN`), nunca `double`/`float`.
+    - Manter e reforçar: `BigDecimal` e `CurrencyUnit`, arredondamento explícito (`RoundingMode.HALF_EVEN`), nunca
+      `double`/`float`.
 6. **Vínculo Explícito com SOLID e Clean Code:**
-   - Para cada padrão, indicar qual princípio SOLID ele promove (ex: Strategy promove OCP; Factory promove DIP e SRP). Referenciar explicitamente [`../solid-principles/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/solid-principles/SKILL.md).
-   - Seção de Anti-Patterns ("Patternitis"): Não introduzir padrões prematuramente quando uma função simples resolve (KISS/YAGNI). Referenciar explicitamente [`../clean-code/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/clean-code/SKILL.md).
+    - Para cada padrão, indicar qual princípio SOLID ele promove (ex: Strategy promove OCP; Factory promove DIP e SRP).
+      Referenciar explicitamente [
+      `../solid-principles/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/solid-principles/SKILL.md).
+    - Seção de Anti-Patterns ("Patternitis"): Não introduzir padrões prematuramente quando uma função simples resolve
+      (KISS/YAGNI). Referenciar explicitamente [
+      `../clean-code/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/clean-code/SKILL.md).
 
 - [x] **Step 2: Atualizar `skills/design-patterns/README.md`**
 
-Documentar a tabela de padrões GoF vs Idiomas Modernos da JVM (Java 25 Records vs Kotlin `by`/Lambdas), matriz de uso e links.
+Documentar a tabela de padrões GoF vs Idiomas Modernos da JVM (Java 25 Records vs Kotlin `by`/Lambdas), matriz de uso e
+links.
 
 - [x] **Step 3: Testar integridade do frontmatter e sintaxe de `design-patterns`**
 
 Executar no PowerShell:
+
 ```powershell
 $c = Get-Content skills/design-patterns/SKILL.md -Raw
 if ($c -match "(?s)^---\s*name:\s*design-patterns\s*description:") { Write-Output "Frontmatter: PASS" } else { Write-Error "Frontmatter: FAIL" }
 ```
+
 Expected: `Frontmatter: PASS`.
 
 - [x] **Step 4: Commit das alterações de `design-patterns`**
@@ -167,16 +220,20 @@ git commit -m "feat(design-patterns): provide idiomatic Java 25 and Kotlin 2.4 p
 ### Task 3: Modernização e Paridade Java/Kotlin na Skill `solid-principles`
 
 **Files:**
+
 - Modify: `skills/solid-principles/SKILL.md`
 - Modify: `skills/solid-principles/README.md`
 
 **Interfaces:**
+
 - Consumes: Princípios SOLID (SRP, OCP, LSP, ISP, DIP), Spring Boot 4.1.1+, Java 25 LTS, Kotlin 2.4+.
-- Produces: Guia detalhado de SOLID na JVM com exemplos emparelhados de violação e solução em Java e Kotlin, com referências para padrões de projeto e clean code.
+- Produces: Guia detalhado de SOLID na JVM com exemplos emparelhados de violação e solução em Java e Kotlin, com
+  referências para padrões de projeto e clean code.
 
 - [x] **Step 1: Atualizar `skills/solid-principles/SKILL.md` com paridade Java 25 e Kotlin 2.4+**
 
 Garantir no `skills/solid-principles/SKILL.md`:
+
 1. **Frontmatter YAML:**
    ```yaml
    ---
@@ -185,38 +242,48 @@ Garantir no `skills/solid-principles/SKILL.md`:
    ---
    ```
 2. **SRP (Single Responsibility):**
-   - Violação: Serviço misturando validação, persistência, notificação e auditoria.
-   - Refatoração Java 25: `record` imutável com validação compacta + repositório dedicado + serviço de notificação.
-   - Refatoração Kotlin 2.4: `data class` imutável + repositório + notificador injetado via construtor primário.
-   - Link cruzado: Para manter funções e métodos pequenos e coesos, consulte [`../clean-code/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/clean-code/SKILL.md).
+    - Violação: Serviço misturando validação, persistência, notificação e auditoria.
+    - Refatoração Java 25: `record` imutável com validação compacta + repositório dedicado + serviço de notificação.
+    - Refatoração Kotlin 2.4: `data class` imutável + repositório + notificador injetado via construtor primário.
+    - Link cruzado: Para manter funções e métodos pequenos e coesos, consulte [
+      `../clean-code/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/clean-code/SKILL.md).
 3. **OCP (Open/Closed):**
-   - Violação: `switch`/`if` em `String` para cálculo de taxas ou desconto.
-   - Refatoração Java 25: `sealed interface` com `permits` e pattern matching exaustivo no `switch`.
-   - Refatoração Kotlin 2.4: `sealed interface` / `sealed class` avaliado em `when` exaustivo, ou polimorfismo via interfaces funcionais.
-   - Link cruzado: Para implementação com o padrão Strategy ou Factory Method, consulte [`../design-patterns/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/design-patterns/SKILL.md).
+    - Violação: `switch`/`if` em `String` para cálculo de taxas ou desconto.
+    - Refatoração Java 25: `sealed interface` com `permits` e pattern matching exaustivo no `switch`.
+    - Refatoração Kotlin 2.4: `sealed interface` / `sealed class` avaliado em `when` exaustivo, ou polimorfismo via
+      interfaces funcionais.
+    - Link cruzado: Para implementação com o padrão Strategy ou Factory Method, consulte [
+      `../design-patterns/SKILL.md`](file:///C:/Users/walla/GitHub/java/pack-skill-agents/skills/design-patterns/SKILL.md).
 4. **LSP (Liskov Substitution):**
-   - Violação: Subclasse lançando `UnsupportedOperationException` ou violando pré/pós-condições.
-   - Refatoração Java 25 e Kotlin 2.4: Segregação correta de hierarquia via `sealed interface` e composição sobre herança.
+    - Violação: Subclasse lançando `UnsupportedOperationException` ou violando pré/pós-condições.
+    - Refatoração Java 25 e Kotlin 2.4: Segregação correta de hierarquia via `sealed interface` e composição sobre
+      herança.
 5. **ISP (Interface Segregation):**
-   - Violação: "Fat interfaces" (ex: repositório com 20 métodos onde um consumidor só precisa de leitura).
-   - Refatoração Java 25: Role interfaces funcionais e pequenas (`ReadOnlyRepository`, `OrderCanceller`).
-   - Refatoração Kotlin 2.4: Interfaces segregadas e composição via delegação (`by`).
+    - Violação: "Fat interfaces" (ex: repositório com 20 métodos onde um consumidor só precisa de leitura).
+    - Refatoração Java 25: Role interfaces funcionais e pequenas (`ReadOnlyRepository`, `OrderCanceller`).
+    - Refatoração Kotlin 2.4: Interfaces segregadas e composição via delegação (`by`).
 6. **DIP (Dependency Inversion):**
-   - Violação: Instanciação direta com `new` / acoplamento a implementações concretas / injeção via `@Autowired` em campo.
-   - Refatoração Java 25 & Kotlin 2.4: Injeção estrita via construtor com dependência exclusiva em interfaces de domínio.
-   - Atualização Spring Boot 4.1.1+: Sem anotações `@Autowired` em construtores únicos; classes de serviço final por padrão em Kotlin com `all-open`/`kotlin-spring`.
+    - Violação: Instanciação direta com `new` / acoplamento a implementações concretas / injeção via `@Autowired` em
+      campo.
+    - Refatoração Java 25 & Kotlin 2.4: Injeção estrita via construtor com dependência exclusiva em interfaces de
+      domínio.
+    - Atualização Spring Boot 4.1.1+: Sem anotações `@Autowired` em construtores únicos; classes de serviço final por
+      padrão em Kotlin com `all-open`/`kotlin-spring`.
 
 - [x] **Step 2: Atualizar `skills/solid-principles/README.md`**
 
-Atualizar o `README.md` com a matriz de resumo SOLID, exemplos concisos e mapa de referências para `design-patterns` e `clean-code`.
+Atualizar o `README.md` com a matriz de resumo SOLID, exemplos concisos e mapa de referências para `design-patterns` e
+`clean-code`.
 
 - [x] **Step 3: Testar integridade do frontmatter e links em `solid-principles`**
 
 Executar no PowerShell:
+
 ```powershell
 $c = Get-Content skills/solid-principles/SKILL.md -Raw
 if ($c -match "(?s)^---\s*name:\s*solid-principles\s*description:") { Write-Output "Frontmatter: PASS" } else { Write-Error "Frontmatter: FAIL" }
 ```
+
 Expected: `Frontmatter: PASS`.
 
 - [x] **Step 4: Commit das alterações de `solid-principles`**
@@ -231,6 +298,7 @@ git commit -m "feat(solid-principles): comprehensive Java 25 and Kotlin 2.4 exam
 ### Task 4: Atualização de Manifestos Multi-IA, Personas e Scripts de Validação
 
 **Files:**
+
 - Modify: `plugin.json`
 - Modify: `.claude-plugin/plugin.json`
 - Modify: `.gemini-plugin/plugin.json`
@@ -244,12 +312,15 @@ git commit -m "feat(solid-principles): comprehensive Java 25 and Kotlin 2.4 exam
 - Modify: `README.md`
 
 **Interfaces:**
-- Consumes: As 5 skills oficializadas sob `skills/` (`java-kotlin-security-audit`, `concurrency-java21-review`, `clean-code`, `design-patterns`, `solid-principles`).
+
+- Consumes: As 5 skills oficializadas sob `skills/` (`java-kotlin-security-audit`, `concurrency-java21-review`,
+  `clean-code`, `design-patterns`, `solid-principles`).
 - Produces: Manifestos e testes atualizados reconhecendo as 5 skills em todas as IAs suportadas.
 
 - [x] **Step 1: Atualizar `plugin.json` na raiz com as 5 skills**
 
 Atualizar a lista de `"skills"` em `plugin.json`:
+
 ```json
 {
   "name": "agent-eng-backend-jvm",
@@ -272,7 +343,9 @@ Atualizar a lista de `"skills"` em `plugin.json`:
 
 - [x] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
 
-Atualizar os 4 manifestos para incluir as 5 skills (`../skills/clean-code`, `../skills/design-patterns`, `../skills/solid-principles`):
+Atualizar os 4 manifestos para incluir as 5 skills (`../skills/clean-code`, `../skills/design-patterns`,
+`../skills/solid-principles`):
+
 - `.claude-plugin/plugin.json`
 - `.gemini-plugin/plugin.json`
 - `.codex-plugin/plugin.json`
@@ -281,15 +354,20 @@ Atualizar os 4 manifestos para incluir as 5 skills (`../skills/clean-code`, `../
 - [x] **Step 3: Atualizar `AGENTS.md`, `CLAUDE.md` e `GEMINI.md` com a taxonomia das 5 skills**
 
 Em `AGENTS.md`, adicionar a descrição e gatilhos de ativação para:
-- `3. clean-code (skills/clean-code/SKILL.md)`: Legibilidade, DRY, KISS, YAGNI, refatoração de código, redução de complexidade ciclomática.
-- `4. design-patterns (skills/design-patterns/SKILL.md)`: Padrões GoF e arquiteturais idiomáticos em Java 25 e Kotlin 2.4, cálculo monetário seguro (`BigDecimal`).
-- `5. solid-principles (skills/solid-principles/SKILL.md)`: Avaliação e refatoração arquitetural baseada em SRP, OCP, LSP, ISP e DIP.
+
+- `3. clean-code (skills/clean-code/SKILL.md)`: Legibilidade, DRY, KISS, YAGNI, refatoração de código, redução de
+  complexidade ciclomática.
+- `4. design-patterns (skills/design-patterns/SKILL.md)`: Padrões GoF e arquiteturais idiomáticos em Java 25 e Kotlin
+  2.4, cálculo monetário seguro (`BigDecimal`).
+- `5. solid-principles (skills/solid-principles/SKILL.md)`: Avaliação e refatoração arquitetural baseada em SRP, OCP,
+  LSP, ISP e DIP.
 
 Atualizar `CLAUDE.md` e `GEMINI.md` para listar as 5 skills carregadas automaticamente.
 
 - [x] **Step 4: Atualizar os scripts de validação (`validate-plugin.ps1` e `validate-plugin.sh`)**
 
 Em `scripts/validate-plugin.ps1`:
+
 ```powershell
 $skills = @(
     "java-kotlin-security-audit",
@@ -299,7 +377,9 @@ $skills = @(
     "solid-principles"
 )
 ```
+
 Em `scripts/validate-plugin.sh`:
+
 ```bash
 SKILLS=(
     "java-kotlin-security-audit"
@@ -312,15 +392,20 @@ SKILLS=(
 
 - [x] **Step 5: Atualizar `README.md` raiz com o ecossistema completo de 5 skills**
 
-Atualizar o diagrama arquitetural Mermaid e a tabela de skills no `README.md` raiz para apresentar detalhadamente as 5 competências do agente.
+Atualizar o diagrama arquitetural Mermaid e a tabela de skills no `README.md` raiz para apresentar detalhadamente as 5
+competências do agente.
 
 - [x] **Step 6: Executar a suíte de validação completa**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
-Expected: `[PASS] Skill valida: clean-code`, `[PASS] Skill valida: design-patterns`, `[PASS] Skill valida: solid-principles` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code 0.
+
+Expected: `[PASS] Skill valida: clean-code`, `[PASS] Skill valida: design-patterns`,
+`[PASS] Skill valida: solid-principles` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code
+0.
 
 - [x] **Step 7: Commit das atualizações de integração**
 
@@ -334,15 +419,18 @@ git commit -m "feat(agent): register clean-code, design-patterns, and solid-prin
 ### Task 5: Validação Final End-to-End e Verificação de Links Cruzados
 
 **Files:**
+
 - Modify: `docs/superpowers/plans/2026-09-22-align-clean-code-patterns-solid.md` (Checklists de progresso)
 
 **Interfaces:**
+
 - Consumes: Todo o repositório integrado.
 - Produces: Garantia de 0 links quebrados, scripts executáveis e sincronismo entre documentações.
 
 - [x] **Step 1: Testar resolução de todos os links relativos citados entre as skills**
 
 Executar script PowerShell de verificação de links cruzados:
+
 ```powershell
 $skillsToCheck = @("skills/clean-code/SKILL.md", "skills/design-patterns/SKILL.md", "skills/solid-principles/SKILL.md")
 foreach ($s in $skillsToCheck) {
@@ -360,22 +448,27 @@ foreach ($s in $skillsToCheck) {
     }
 }
 ```
+
 Expected: Todas as referências marcadas como `Link OK` sem erros.
 
 - [x] **Step 2: Executar varredura rápida de segurança das novas skills**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-security-audit\scripts\quick_scan.ps1 skills -FailOn nunca
 ```
+
 Expected: Exit code 0, 0 candidatos de falha.
 
 - [x] **Step 3: Executar validação do plugin**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
+
 Expected: `==> SUCESSO: Todos os componentes do agente foram validados!`
 
 - [x] **Step 4: Commit de fechamento e registro**
@@ -389,7 +482,11 @@ git commit -m "docs: complete modernization and cross-referencing plan for clean
 
 ## Self-Review Checklist
 
-- **Spec Coverage:** As 3 skills pedidas pelo usuário (`clean-code`, `design-patterns`, `solid-principles`) são individualmente modernizadas para Java 25 LTS, Kotlin 2.4+ e Spring Boot 4.1.1+, preservando suas missões essenciais. A malha de referências cruzadas ("o que uma não cobrir referencia a outra") está estabelecida e testada na Task 5.
-- **No Placeholders:** Todos os comandos, snippets de configuração JSON, regex e estruturas de verificação contêm código exato.
-- **Type/Path Consistency:** Todas as referências apontam para `skills/clean-code/`, `skills/design-patterns/`, `skills/solid-principles/`, `skills/java-kotlin-security-audit/` e `skills/concurrency-java21-review/`.
+- **Spec Coverage:** As 3 skills pedidas pelo usuário (`clean-code`, `design-patterns`, `solid-principles`) são
+  individualmente modernizadas para Java 25 LTS, Kotlin 2.4+ e Spring Boot 4.1.1+, preservando suas missões essenciais.
+  A malha de referências cruzadas ("o que uma não cobrir referencia a outra") está estabelecida e testada na Task 5.
+- **No Placeholders:** Todos os comandos, snippets de configuração JSON, regex e estruturas de verificação contêm código
+  exato.
+- **Type/Path Consistency:** Todas as referências apontam para `skills/clean-code/`, `skills/design-patterns/`,
+  `skills/solid-principles/`, `skills/java-kotlin-security-audit/` e `skills/concurrency-java21-review/`.
 - **Cross-Platform:** PowerShell e Bash contemplados.

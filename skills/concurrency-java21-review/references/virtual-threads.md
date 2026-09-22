@@ -23,18 +23,19 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 Rule of thumb: benefit appears with high concurrent blocking tasks (often thousands+). Few concurrent tasks may not
 justify migration. **Always benchmark before recommending migration for performance reasons.**
 
-| Workload                         | VT Benefit    | Reason                                         |
-|----------------------------------|---------------|------------------------------------------------|
-| I/O-bound (HTTP, DB, file)       | High          | Carrier freed during wait; N× more concurrency |
-| CPU-bound (crypto, image)        | None/Negative | Still consumes carrier CPU; minor overhead     |
-| Mixed (I/O + some CPU)           | Moderate      | Depends on ratio                               |
-| Very few concurrent tasks (<50)  | Minimal       | Thread pool already sufficient                 |
+| Workload                        | VT Benefit    | Reason                                         |
+|---------------------------------|---------------|------------------------------------------------|
+| I/O-bound (HTTP, DB, file)      | High          | Carrier freed during wait; N× more concurrency |
+| CPU-bound (crypto, image)       | None/Negative | Still consumes carrier CPU; minor overhead     |
+| Mixed (I/O + some CPU)          | Moderate      | Depends on ratio                               |
+| Very few concurrent tasks (<50) | Minimal       | Thread pool already sufficient                 |
 
 ---
 
 ## 2. JVM Internals — How Virtual Threads Work
 
 ### 2.1 Continuation Mechanism
+
 - **`jdk.internal.vm.Continuation`** — a pauseable, resumable computation; stores call-stack frames (program counter,
   local variables, operand stack) on the **Java heap**, not on native memory.
 - **Flow:** VT hits blocking op → JVM "yields" the continuation → stack frames serialized to heap → carrier thread freed
@@ -43,6 +44,7 @@ justify migration. **Always benchmark before recommending migration for performa
   continuations are fine; OS-thread-local state (e.g., native thread IDs) is **not safe** across unmount/remount.
 
 ### 2.2 Carrier Thread Scheduler
+
 - **Default scheduler:** A dedicated `ForkJoinPool` — **NOT** `ForkJoinPool.commonPool()`.
 - **Algorithm:** FIFO work-stealing, optimized for I/O-bound tasks.
 - **Tuning flags (JVM system properties):**
@@ -54,6 +56,7 @@ justify migration. **Always benchmark before recommending migration for performa
   the VT scheduler. They are completely separate pools.
 
 ### 2.3 Memory Model
+
 - Platform thread stacks: ~1 MB native memory each, fixed at creation time.
 - VT stacks: start at ~1 KB on the **Java heap**; grow as needed; shrink after unmounting.
 - **Cloud/Kubernetes implication:** Moving to VTs shifts memory pressure from native (off-heap, not counted in `-Xmx`)
@@ -83,6 +86,7 @@ ThreadFactory factory = Thread.ofVirtual()
 ```
 
 ### VT Properties (Non-negotiable)
+
 - VTs are **always daemon threads** — calling `setDaemon(false)` throws `IllegalArgumentException`.
 - VTs always run at **`NORM_PRIORITY`** — priority changes have no effect.
 - **Name them** — unnamed VTs are nearly impossible to debug at scale.
@@ -110,7 +114,11 @@ Pooling VTs wastes the benefit and adds artificial back-pressure at the wrong la
 
 ### 4.1 Object Pool Incompatibility
 
-Object Pools (generic resource reuse pools) interact poorly with Virtual Threads because VTs are short-lived. Object pools designed for long-lived threads or per-thread reference management retain weak/garbage references and suffer from pool contention and resource leaks when used with high-volume Virtual Threads (Evans et al., Ch. 13; Rahman, Ch. 7). Do not use per-thread or generic object pools for Virtual Thread workloads; rely on lightweight direct allocations or application-scoped managed resource pools.
+Object Pools (generic resource reuse pools) interact poorly with Virtual Threads because VTs are short-lived. Object
+pools designed for long-lived threads or per-thread reference management retain weak/garbage references and suffer from
+pool contention and resource leaks when used with high-volume Virtual Threads (Evans et al., Ch. 13; Rahman, Ch. 7). Do
+not use per-thread or generic object pools for Virtual Thread workloads; rely on lightweight direct allocations or
+application-scoped managed resource pools.
 
 
 ---
@@ -118,26 +126,33 @@ Object Pools (generic resource reuse pools) interact poorly with Virtual Threads
 ## 5. Pinning
 
 ### 5.1 What Pinning Is
+
 Pinning = a VT **cannot unmount** from its carrier during a blocking operation. The carrier thread remains blocked,
 defeating VT scalability.
 
 ### 5.2 Pinning in Java 21 LTS (`synchronized`)
-- **In Java 21, `synchronized` holding a blocking operation ALWAYS pins the carrier thread.** Monitor ownership is tied to the carrier thread in JDK 21.
-- JEP 491 (which decoupled monitor ownership from carriers to unpin `synchronized`) was delivered in Java 24 and is **OUT OF SCOPE** for Java 21.
-- In Java 21 codebases, you **MUST** replace `synchronized` with `ReentrantLock` for operations holding blocking I/O or wait states.
+
+- **In Java 21, `synchronized` holding a blocking operation ALWAYS pins the carrier thread.** Monitor ownership is tied
+  to the carrier thread in JDK 21.
+- JEP 491 (which decoupled monitor ownership from carriers to unpin `synchronized`) was delivered in Java 24 and is
+  **OUT OF SCOPE** for Java 21.
+- In Java 21 codebases, you **MUST** replace `synchronized` with `ReentrantLock` for operations holding blocking I/O or
+  wait states.
 
 ### 5.3 What Pins in Java 21
 
-| Scenario                                 | Still Pins? | Action                                          |
-|------------------------------------------|-------------|--------------------------------------------------|
-| `synchronized` blocking I/O / wait       | ✅ YES      | Replace with `ReentrantLock`                    |
-| JNI / native methods                     | ✅ YES      | Minimize native calls in hot VT paths           |
-| Foreign Function & Memory API (FFM)      | ✅ YES      | Keep FFM calls off critical VT paths     |
-| Class loading during execution           | ✅ YES      | Pre-load critical classes at startup            |
-| Certain file system I/O on Linux        | ✅ YES      | Use `AsynchronousFileChannel` or dedicated pool |
+| Scenario                            | Still Pins? | Action                                          |
+|-------------------------------------|-------------|-------------------------------------------------|
+| `synchronized` blocking I/O / wait  | ✅ YES      | Replace with `ReentrantLock`                    |
+| JNI / native methods                | ✅ YES      | Minimize native calls in hot VT paths           |
+| Foreign Function & Memory API (FFM) | ✅ YES      | Keep FFM calls off critical VT paths            |
+| Class loading during execution      | ✅ YES      | Pre-load critical classes at startup            |
+| Certain file system I/O on Linux    | ✅ YES      | Use `AsynchronousFileChannel` or dedicated pool |
 
 ### 5.4 Why `synchronized` Must Be Replaced with `ReentrantLock` in Java 21
-- **Carrier pinning** — in Java 21, a VT holding a `synchronized` block during blocking I/O pins its carrier OS thread, preventing other VTs from executing on that carrier.
+
+- **Carrier pinning** — in Java 21, a VT holding a `synchronized` block during blocking I/O pins its carrier OS thread,
+  preventing other VTs from executing on that carrier.
 - **Monitor contention** serializes access under high load — thousands of VTs queue on one monitor.
 - **No bounded wait** — `ReentrantLock.tryLock(timeout)` enables deadlock avoidance.
 - **No interruptibility** — `synchronized` blocks cannot be interrupted; `lockInterruptibly()` can be cancelled.
@@ -185,10 +200,11 @@ java -XX:StartFlightRecording=filename=vt.jfr,settings=profile,\
 
 VTs eliminate the application-layer thread ceiling but **do not eliminate downstream resource limits**.
 
-**Before VTs:** Fixed thread pool (e.g., 200 threads) → implicit backpressure.
-**After VTs:** No implicit backpressure → **must be explicit**.
+**Before VTs:** Fixed thread pool (e.g., 200 threads) → implicit backpressure. **After VTs:** No implicit backpressure →
+**must be explicit**.
 
 Without protection, VTs can:
+
 - Exhaust JDBC connection pools
 - Overwhelm external APIs (rate limit violations, 429s)
 - Hit OS file descriptor limits (`Too many open files`)
@@ -248,10 +264,13 @@ public Result query(String sql) {
 
 - **Do NOT remove the connection pool** — JDBC connections are expensive OS resources.
 - **Size the pool to DB capacity**, NOT to thread count.
-  - Hikari formula: `(db_cores × 2) + effective_spindle_count`
-  - Start conservative; tune based on DB wait metrics, not application thread count.
-- **Java 21 — risco não resolvido:** HikariCP mantém `synchronized` em trechos internos (ex.: `getConnection()`). Uma PR para migrar para `ReentrantLock` (#2055) foi fechada pelo mantenedor, que optou por aguardar a JEP 491 (JDK 24) em vez de corrigir na biblioteca. Não há versão do HikariCP que elimine o pinning em Java 21.
-- **Mitigação disponível em Java 21:** alinhar `Semaphore` ao `maximumPoolSize`, monitorar `jdk.VirtualThreadPinned` via JFR, e evitar chamadas de I/O adicionais (ex.: logging síncrono) dentro do mesmo carrier sob contenção.
+    - Hikari formula: `(db_cores × 2) + effective_spindle_count`
+    - Start conservative; tune based on DB wait metrics, not application thread count.
+- **Java 21 — risco não resolvido:** HikariCP mantém `synchronized` em trechos internos (ex.: `getConnection()`). Uma PR
+  para migrar para `ReentrantLock` (#2055) foi fechada pelo mantenedor, que optou por aguardar a JEP 491 (JDK 24) em vez
+  de corrigir na biblioteca. Não há versão do HikariCP que elimine o pinning em Java 21.
+- **Mitigação disponível em Java 21:** alinhar `Semaphore` ao `maximumPoolSize`, monitorar `jdk.VirtualThreadPinned` via
+  JFR, e evitar chamadas de I/O adicionais (ex.: logging síncrono) dentro do mesmo carrier sob contenção.
 
 ```java
 // ✅ Aligned semaphore and HikariCP pool size
@@ -267,13 +286,13 @@ private final Semaphore dbPermits = new Semaphore(50); // <= maxPoolSize
 
 ### 6.4 Resource Limits Reference
 
-| Resource               | Limit Mechanism                    | Without Protection                           |
-|------------------------|------------------------------------|----------------------------------------------|
-| JDBC connections       | HikariCP `maxPoolSize` + Semaphore | Pool exhaustion, long queues, timeouts       |
-| HTTP client            | Max connections per route          | Connection exhaustion, rejected connections  |
-| File descriptors       | OS `ulimit`; monitor with JFR      | `Too many open files` errors                 |
-| External APIs          | Semaphore + rate limiter           | 429s, circuit breaker trips                  |
-| Message brokers        | Consumer/producer concurrency      | Broker overload, backpressure propagation    |
+| Resource         | Limit Mechanism                    | Without Protection                          |
+|------------------|------------------------------------|---------------------------------------------|
+| JDBC connections | HikariCP `maxPoolSize` + Semaphore | Pool exhaustion, long queues, timeouts      |
+| HTTP client      | Max connections per route          | Connection exhaustion, rejected connections |
+| File descriptors | OS `ulimit`; monitor with JFR      | `Too many open files` errors                |
+| External APIs    | Semaphore + rate limiter           | 429s, circuit breaker trips                 |
+| Message brokers  | Consumer/producer concurrency      | Broker overload, backpressure propagation   |
 
 ---
 
@@ -302,7 +321,8 @@ try {
 
 In Java 21, `ScopedValue` (JEP 446) is a **Preview API**. Using preview APIs in production is **PROHIBITED**.
 
-For request context in Java 21, use `ThreadLocal` with mandatory cleanup via `remove()` inside a `finally` block, or pass context explicitly via parameter (e.g. immutability records).
+For request context in Java 21, use `ThreadLocal` with mandatory cleanup via `remove()` inside a `finally` block, or
+pass context explicitly via parameter (e.g. immutability records).
 
 ```java
 // ✅ Java 21 Standard Pattern — ThreadLocal with mandatory remove() in finally
@@ -442,7 +462,8 @@ ExecutorService filePool = Executors.newFixedThreadPool(8);
 ## 12. GraalVM Native Image + Virtual Threads
 
 - GraalVM Native Image **fully supports Virtual Threads** (since GraalVM for JDK 21+).
-- **Caveat:** Dynamic class loading during VT execution may pin the carrier (class-loading pinning persists in Native Image).
+- **Caveat:** Dynamic class loading during VT execution may pin the carrier (class-loading pinning persists in Native
+  Image).
 - **Pre-load critical classes** at startup to avoid class-loading pinning at runtime:
   ```java
   // In application startup
@@ -473,12 +494,12 @@ jcmd <PID> Thread.vthread_scheduler     # scheduler activity
 
 ### JFR Events for VTs
 
-| Event                              | What It Captures                  | Default Threshold |
-|------------------------------------|-----------------------------------|-------------------|
-| `jdk.VirtualThreadPinned`         | VT pinned to carrier              | 20 ms             |
-| `jdk.VirtualThreadStart`          | VT lifecycle start                | Always            |
-| `jdk.VirtualThreadEnd`            | VT lifecycle end                  | Always            |
-| `jdk.VirtualThreadSubmitFailed`   | Carrier pool exhausted (JDK 25 — out of scope for Java 21) | Always |
+| Event                           | What It Captures                                           | Default Threshold |
+|---------------------------------|------------------------------------------------------------|-------------------|
+| `jdk.VirtualThreadPinned`       | VT pinned to carrier                                       | 20 ms             |
+| `jdk.VirtualThreadStart`        | VT lifecycle start                                         | Always            |
+| `jdk.VirtualThreadEnd`          | VT lifecycle end                                           | Always            |
+| `jdk.VirtualThreadSubmitFailed` | Carrier pool exhausted (JDK 25 — out of scope for Java 21) | Always            |
 
 > **Monitoring misconception:** Standard Prometheus JVM metrics and VisualVM default views show **platform thread
 > count** (carrier threads), which stays roughly constant even with millions of VTs. Use JFR or custom VT metrics to
@@ -523,17 +544,18 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
 ## 16. API Status Reference
 
-| Feature                                              | Status             | JDK Available | Aplicável ao Target (Java 21)? |
-|------------------------------------------------------|--------------------|---------------|--------------------------------|
-| Virtual Threads                                      | **GA (Final)**     | JDK 21        | ✅ Sim (Padrão)                 |
-| ScopedValue (JEP 446/506)                            | **Preview**        | JDK 21-24     | ❌ Não (Preview — Proibido)    |
-| StructuredTaskScope                                  | **Preview**        | JDK 21-25+    | ❌ Não (Preview — Proibido)    |
-| `synchronized` pinning fix (JEP 491)                 | **GA**             | JDK 24        | ❌ Não (Out of scope - JDK 24+)|
-| `jdk.VirtualThreadSubmitFailed` JFR event            | **GA**             | JDK 25        | ❌ Não (Out of scope - JDK 25+)|
-| `Thread.dump_to_file` with VT support                | **GA**             | JDK 21+       | ✅ Sim                         |
-| Spring VT support (`spring.threads.virtual.enabled`) | **GA**             | Spring Boot 3.2+ | ✅ Sim                       |
+| Feature                                              | Status         | JDK Available    | Aplicável ao Target (Java 21)?  |
+|------------------------------------------------------|----------------|------------------|---------------------------------|
+| Virtual Threads                                      | **GA (Final)** | JDK 21           | ✅ Sim (Padrão)                 |
+| ScopedValue (JEP 446/506)                            | **Preview**    | JDK 21-24        | ❌ Não (Preview — Proibido)     |
+| StructuredTaskScope                                  | **Preview**    | JDK 21-25+       | ❌ Não (Preview — Proibido)     |
+| `synchronized` pinning fix (JEP 491)                 | **GA**         | JDK 24           | ❌ Não (Out of scope - JDK 24+) |
+| `jdk.VirtualThreadSubmitFailed` JFR event            | **GA**         | JDK 25           | ❌ Não (Out of scope - JDK 25+) |
+| `Thread.dump_to_file` with VT support                | **GA**         | JDK 21+          | ✅ Sim                          |
+| Spring VT support (`spring.threads.virtual.enabled`) | **GA**         | Spring Boot 3.2+ | ✅ Sim                          |
 
-> `StructuredTaskScope` e `ScopedValue` permanecem em preview no Java 21. **NUNCA recomende ou aceite em código de produção.**
+> `StructuredTaskScope` e `ScopedValue` permanecem em preview no Java 21. **NUNCA recomende ou aceite em código de
+produção.**
 
 ---
 

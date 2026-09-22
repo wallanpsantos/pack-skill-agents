@@ -14,25 +14,53 @@ propagate to a single terminal handler.
 
 ```java
 // ❌ exception swallowed — no terminal handler
-CompletableFuture.supplyAsync(() -> riskyOperation());
+CompletableFuture.supplyAsync(() ->
+
+riskyOperation());
 
 // ✅ terminal handler with fallback
-CompletableFuture.supplyAsync(() -> riskyOperation(), vtExecutor)
-    .exceptionally(ex -> {
-        log.error("Operation failed", ex);
+        CompletableFuture.
+
+supplyAsync(() ->
+
+riskyOperation(),vtExecutor)
+        .
+
+exceptionally(ex ->{
+        log.
+
+error("Operation failed",ex);
         return fallbackValue;
     });
 
 // ✅ success + failure in one handler
-CompletableFuture.supplyAsync(() -> riskyOperation(), vtExecutor)
-    .handle((result, ex) -> ex != null ? fallbackValue : result);
+            CompletableFuture.
+
+supplyAsync(() ->
+
+riskyOperation(),vtExecutor)
+        .
+
+handle((result, ex) ->ex !=null?fallbackValue :result);
 
 // ✅ Pipeline: internal stages propagate to one terminal handler
-CompletableFuture.supplyAsync(() -> fetchData(), vtExecutor)
-    .thenApply(this::transform)
-    .thenApply(this::enrich)
-    .exceptionally(ex -> {
-        log.error("Pipeline failed", ex);
+        CompletableFuture.
+
+supplyAsync(() ->
+
+fetchData(),vtExecutor)
+        .
+
+thenApply(this::transform)
+    .
+
+thenApply(this::enrich)
+    .
+
+exceptionally(ex ->{
+        log.
+
+error("Pipeline failed",ex);
         return fallbackValue;
     });
 ```
@@ -42,11 +70,21 @@ CompletableFuture.supplyAsync(() -> fetchData(), vtExecutor)
 ## 2. Timeouts (Mandatory on Remote/Blocking Work)
 
 ```java
-CompletableFuture.supplyAsync(() -> slowOperation(), vtExecutor)
-    .orTimeout(5, TimeUnit.SECONDS);                       // completes exceptionally on timeout
+CompletableFuture.supplyAsync(() ->
 
-CompletableFuture.supplyAsync(() -> slowOperation(), vtExecutor)
-    .completeOnTimeout(defaultValue, 5, TimeUnit.SECONDS); // completes with a default
+slowOperation(),vtExecutor)
+        .
+
+orTimeout(5,TimeUnit.SECONDS);                       // completes exceptionally on timeout
+
+CompletableFuture.
+
+supplyAsync(() ->
+
+slowOperation(),vtExecutor)
+        .
+
+completeOnTimeout(defaultValue, 5,TimeUnit.SECONDS); // completes with a default
 ```
 
 > `orTimeout` completes the **future**; it does not cancel the work already running. The blocking call must have its own
@@ -59,30 +97,44 @@ CompletableFuture.supplyAsync(() -> slowOperation(), vtExecutor)
 ```java
 // Fan-out with result collection
 var futures = requests.stream()
-    .map(req -> CompletableFuture.supplyAsync(() -> call(req), vtExecutor)
-                                 .orTimeout(5, TimeUnit.SECONDS))
-    .toList();
+                .map(req -> CompletableFuture.supplyAsync(() -> call(req), vtExecutor)
+                        .orTimeout(5, TimeUnit.SECONDS))
+                .toList();
 
-CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-    .handle((ignored, ex) -> null)   // allOf fails fast; inspect each future below
-    .join();                         // every future already carries its own timeout
+CompletableFuture.
+
+allOf(futures.toArray(CompletableFuture[]::new))
+        .
+
+handle((ignored, ex) ->null)   // allOf fails fast; inspect each future below
+        .
+
+join();                         // every future already carries its own timeout
 
 // ✅ Java 19+: inspect state instead of getNow(null), which cannot tell "failed" from "returned null"
 List<Result> ok = futures.stream()
-    .filter(f -> f.state() == Future.State.SUCCESS)
-    .map(Future::resultNow)
-    .toList();
+        .filter(f -> f.state() == Future.State.SUCCESS)
+        .map(Future::resultNow)
+        .toList();
 
 List<Throwable> failures = futures.stream()
-    .filter(f -> f.state() == Future.State.FAILED)
-    .map(Future::exceptionNow)
-    .toList();
+        .filter(f -> f.state() == Future.State.FAILED)
+        .map(Future::exceptionNow)
+        .toList();
 
 // First to complete
-CompletableFuture.anyOf(f1, f2, f3).thenAccept(r -> log.info("first: {}", r));
+CompletableFuture.
+
+anyOf(f1, f2, f3).
+
+thenAccept(r ->log.
+
+info("first: {}",r));
 
 // Combine two independent results
-f1.thenCombine(f2, this::merge);
+        f1.
+
+thenCombine(f2, this::merge);
 ```
 
 > `join()` exists on `CompletableFuture`, **not** on the `Future` interface. `futures.stream().map(Future::join)` does
@@ -95,10 +147,18 @@ f1.thenCombine(f2, this::merge);
 
 ```java
 // ❌ blocking I/O on commonPool — saturates a shared pool
-CompletableFuture.supplyAsync(() -> blockingIoCall());
+CompletableFuture.supplyAsync(() ->
+
+blockingIoCall());
 
 // ❌ new VT executor per call, never closed — leak
-CompletableFuture.supplyAsync(() -> blockingIoCall(), Executors.newVirtualThreadPerTaskExecutor());
+        CompletableFuture.
+
+supplyAsync(() ->
+
+blockingIoCall(),Executors.
+
+newVirtualThreadPerTaskExecutor());
 
 // ✅ shared application-scoped executor
 @Bean(destroyMethod = "shutdown")
@@ -107,10 +167,20 @@ public ExecutorService vtExecutor() {
 }
 
 // ✅ full chain: executor + timeout + terminal handler
-CompletableFuture.supplyAsync(() -> blockingIoCall(), vtExecutor)
-    .orTimeout(5, TimeUnit.SECONDS)
-    .exceptionally(ex -> {
-        log.error("blockingIoCall failed", ex);
+CompletableFuture.
+
+supplyAsync(() ->
+
+blockingIoCall(),vtExecutor)
+        .
+
+orTimeout(5,TimeUnit.SECONDS)
+    .
+
+exceptionally(ex ->{
+        log.
+
+error("blockingIoCall failed",ex);
         return fallback;
     });
 ```
@@ -119,17 +189,23 @@ CompletableFuture.supplyAsync(() -> blockingIoCall(), vtExecutor)
 
 ```java
 // ❌ defaults to ForkJoinPool.commonPool; any blocking inside ties up a commonPool thread
-future.thenApplyAsync(result -> blockingTransform(result));
+future.thenApplyAsync(result ->
+
+blockingTransform(result));
 
 // ✅
-future.thenApplyAsync(result -> blockingTransform(result), vtExecutor);
+        future.
+
+thenApplyAsync(result ->
+
+blockingTransform(result),vtExecutor);
 ```
 
-| Work Type                                | Executor                                                      |
-|------------------------------------------|---------------------------------------------------------------|
-| Blocking I/O                             | Shared VT executor                                            |
-| CPU-bound                                | Dedicated sized platform executor — never `commonPool`        |
-| Fire-and-forget I/O without composition  | `Thread.ofVirtual().name("...", 0).start(...)` — skip CF      |
+| Work Type                               | Executor                                                 |
+|-----------------------------------------|----------------------------------------------------------|
+| Blocking I/O                            | Shared VT executor                                       |
+| CPU-bound                               | Dedicated sized platform executor — never `commonPool`   |
+| Fire-and-forget I/O without composition | `Thread.ofVirtual().name("...", 0).start(...)` — skip CF |
 
 ---
 
@@ -137,16 +213,34 @@ future.thenApplyAsync(result -> blockingTransform(result), vtExecutor);
 
 ```java
 // ❌ CF only to "look async" while blocking commonPool
-CompletableFuture.supplyAsync(() -> jdbcQuery());
+CompletableFuture.supplyAsync(() ->
+
+jdbcQuery());
 
 // ❌ Nesting CF with join() — deadlock risk on bounded pools
-return supplyAsync(() -> supplyAsync(() -> call()).join()).join();
+        return
+
+supplyAsync(() ->
+
+supplyAsync(() ->
+
+call()).
+
+join()).
+
+join();
 
 // ❌ VT pool (fixed pool of virtual threads)
-Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
+Executors.
+
+newFixedThreadPool(100,Thread.ofVirtual().
+
+factory());
 
 // ❌ join() / get() on the request thread without timeout
-future.join();
+        future.
+
+join();
 // ✅ orTimeout() on the chain before join(), or get(timeout, unit)
 ```
 
@@ -159,7 +253,11 @@ future.join();
 
 ```java
 // ❌ blocking I/O inside parallelStream saturates commonPool
-items.parallelStream().map(this::callExternalService).toList();
+items.parallelStream().
+
+map(this::callExternalService).
+
+toList();
 
 // ✅ explicit VT executor with per-task timeout and cancellation — see references/parallelism.md §3
 ```

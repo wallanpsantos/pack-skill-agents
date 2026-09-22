@@ -5,32 +5,39 @@ description: Princípios SOLID (SRP, OCP, LSP, ISP, DIP) aplicados de forma idio
 
 # Princípios SOLID na JVM Moderna (Java 25 LTS & Kotlin 2.4+)
 
-Guia definitivo e checklist prático dos princípios **SOLID** (*Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion*), aplicados com rigor arquitetural e de forma idiomática na plataforma JVM moderna com **Java 25 LTS**, **Kotlin 2.4+** e **Spring Boot 4.1.1+**.
+Guia definitivo e checklist prático dos princípios **SOLID** (*Single Responsibility, Open/Closed, Liskov Substitution,
+Interface Segregation, Dependency Inversion*), aplicados com rigor arquitetural e de forma idiomática na plataforma JVM
+moderna com **Java 25 LTS**, **Kotlin 2.4+** e **Spring Boot 4.1.1+**.
 
-Foco em tipagem estática avançada (`sealed interface`, `record`, pattern matching, class delegation), imutabilidade, isolamento de efeitos colaterais, concorrência segura com Virtual Threads e precisão financeira estrita com `BigDecimal` e `RoundingMode.HALF_EVEN`.
+Foco em tipagem estática avançada (`sealed interface`, `record`, pattern matching, class delegation), imutabilidade,
+isolamento de efeitos colaterais, concorrência segura com Virtual Threads e precisão financeira estrita com `BigDecimal`
+e `RoundingMode.HALF_EVEN`.
 
 ---
 
 ## Quando Usar
 
 - Durante revisões de Pull Requests e arquitetura de classes focadas em acoplamento, coesão e manutenibilidade.
-- Ao refatorar classes infladas ("God Classes" ou serviços monolíticos) que misturam validação, persistência e orquestração.
-- Ao substituir condicionais legadas (`if`/`else` ou `switch` baseados em `String`/enum) por polimorfismo seguro e extensível.
+- Ao refatorar classes infladas ("God Classes" ou serviços monolíticos) que misturam validação, persistência e
+  orquestração.
+- Ao substituir condicionais legadas (`if`/`else` ou `switch` baseados em `String`/enum) por polimorfismo seguro e
+  extensível.
 - Ao identificar violações de contratos de herança (`UnsupportedOperationException` ou pré/pós-condições quebradas).
 - Ao decompor interfaces gigantes ("Fat Interfaces") em contratos enxutos focados no cliente ("Role Interfaces").
-- Ao eliminar acoplamento rígido (instanciações diretas com `new` ou `@Autowired` em campos) em favor de injeção limpa por construtor e dependência de abstrações de domínio.
+- Ao eliminar acoplamento rígido (instanciações diretas com `new` ou `@Autowired` em campos) em favor de injeção limpa
+  por construtor e dependência de abstrações de domínio.
 
 ---
 
 ## Matriz Resumo dos Princípios SOLID
 
-| Letra | Princípio | Resumo do Conceito | Idioma Java 25 LTS | Idioma Kotlin 2.4+ | Padrão GoF Relacionado |
-|---|---|---|---|---|---|
-| **S** | **Single Responsibility** | Uma classe deve ter um, e apenas um, motivo para mudar. | `record` imutável com validação compacta + serviços orquestradores desacoplados. | `data class` imutável com bloco `init` + serviços com injeção via construtor primário. | [Builder, Strategy, Observer](../design-patterns/SKILL.md) |
-| **O** | **Open/Closed** | Aberto para extensão, fechado para modificação. | `sealed interface` com `permits` + pattern matching exaustivo no `switch`. | `sealed interface` / `sealed class` avaliado em `when` exaustivo ou `fun interface`. | [Strategy, Factory Method, Decorator](../design-patterns/SKILL.md) |
-| **L** | **Liskov Substitution** | Subtipos devem ser substituíveis por seus tipos base sem alterar a corretude. | `sealed interface` hierárquica imutável; composição sobre herança; sem `UnsupportedOperationException`. | Segregação de hierarquia via interfaces e classes de dados; contratos claros sem exceções em operações base. | [Adapter, Strategy](../design-patterns/SKILL.md) |
-| **I** | **Interface Segregation** | Clientes não devem ser forçados a depender de métodos que não utilizam. | Role interfaces pequenas e funcionais (`@FunctionalInterface`). | Interfaces segregadas combinadas elegantemente via delegação nativa de classes (`by`). | [Adapter](../design-patterns/SKILL.md) |
-| **D** | **Dependency Inversion** | Módulos de alto nível não devem depender de módulos de baixo nível; ambos dependem de abstrações. | Injeção estrita via construtor único sem `@Autowired`; dependência em interfaces de domínio puro. | Construtor primário conciso (`val`); suporte a CGLIB via `kotlin-spring` (`all-open`); fakes de teste. | [Factory Method, Strategy](../design-patterns/SKILL.md) |
+| Letra | Princípio                 | Resumo do Conceito                                                                                | Idioma Java 25 LTS                                                                                      | Idioma Kotlin 2.4+                                                                                           | Padrão GoF Relacionado                                             |
+|-------|---------------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| **S** | **Single Responsibility** | Uma classe deve ter um, e apenas um, motivo para mudar.                                           | `record` imutável com validação compacta + serviços orquestradores desacoplados.                        | `data class` imutável com bloco `init` + serviços com injeção via construtor primário.                       | [Builder, Strategy, Observer](../design-patterns/SKILL.md)         |
+| **O** | **Open/Closed**           | Aberto para extensão, fechado para modificação.                                                   | `sealed interface` com `permits` + pattern matching exaustivo no `switch`.                              | `sealed interface` / `sealed class` avaliado em `when` exaustivo ou `fun interface`.                         | [Strategy, Factory Method, Decorator](../design-patterns/SKILL.md) |
+| **L** | **Liskov Substitution**   | Subtipos devem ser substituíveis por seus tipos base sem alterar a corretude.                     | `sealed interface` hierárquica imutável; composição sobre herança; sem `UnsupportedOperationException`. | Segregação de hierarquia via interfaces e classes de dados; contratos claros sem exceções em operações base. | [Adapter, Strategy](../design-patterns/SKILL.md)                   |
+| **I** | **Interface Segregation** | Clientes não devem ser forçados a depender de métodos que não utilizam.                           | Role interfaces pequenas e funcionais (`@FunctionalInterface`).                                         | Interfaces segregadas combinadas elegantemente via delegação nativa de classes (`by`).                       | [Adapter](../design-patterns/SKILL.md)                             |
+| **D** | **Dependency Inversion**  | Módulos de alto nível não devem depender de módulos de baixo nível; ambos dependem de abstrações. | Injeção estrita via construtor único sem `@Autowired`; dependência em interfaces de domínio puro.       | Construtor primário conciso (`val`); suporte a CGLIB via `kotlin-spring` (`all-open`); fakes de teste.       | [Factory Method, Strategy](../design-patterns/SKILL.md)            |
 
 ---
 
@@ -38,10 +45,15 @@ Foco em tipagem estática avançada (`sealed interface`, `record`, pattern match
 
 > *"Uma classe deve ter apenas um motivo para mudar."* — Robert C. Martin
 
-O SRP estabelece que um módulo ou classe deve ser responsável por um único ator ou contexto de negócio. Quando uma classe acumula responsabilidades distintas — como validação de dados, persistência em banco, envio de e-mails e registro de auditoria —, mudanças em regras de notificação forçam a alteração de código que lida com o ciclo de vida de persistência, elevando drasticamente o risco de regressões.
+O SRP estabelece que um módulo ou classe deve ser responsável por um único ator ou contexto de negócio. Quando uma
+classe acumula responsabilidades distintas — como validação de dados, persistência em banco, envio de e-mails e registro
+de auditoria —, mudanças em regras de notificação forçam a alteração de código que lida com o ciclo de vida de
+persistência, elevando drasticamente o risco de regressões.
 
 ### Sintomas de Violação
-- Classes com múltiplos imports de domínios não relacionados (ex: `jakarta.persistence.*`, `jakarta.mail.*`, `org.slf4j.Logger`, regras de cálculo).
+
+- Classes com múltiplos imports de domínios não relacionados (ex: `jakarta.persistence.*`, `jakarta.mail.*`,
+  `org.slf4j.Logger`, regras de cálculo).
 - Nomes de classes genéricos ou compostos: `UserManager`, `OrderProcessorAndNotifier`, `PaymentHandler`.
 - Métodos longos que misturam orquestração com detalhes de infraestrutura e formatação de texto.
 - Dificuldade em escrever testes unitários sem mockar dezenas de colaboradores.
@@ -93,7 +105,9 @@ public class UserService {
 
 ### Refatoração Idiomática em Java 25 LTS
 
-No Java 25, a validação de formato e integridade estrutural é encapsulada diretamente no construtor compacto de um `record` imutável. Cada dependência de infraestrutura é isolada em seu próprio componente coeso, e o serviço atua exclusivamente como orquestrador do caso de uso:
+No Java 25, a validação de formato e integridade estrutural é encapsulada diretamente no construtor compacto de um
+`record` imutável. Cada dependência de infraestrutura é isolada em seu próprio componente coeso, e o serviço atua
+exclusivamente como orquestrador do caso de uso:
 
 ```java
 // ✅ GOOD (Java 25): Invariantes no record e componentes com responsabilidades isoladas
@@ -196,7 +210,8 @@ public class UserService {
 
 ### Refatoração Idiomática em Kotlin 2.4+
 
-Em Kotlin 2.4, utilizamos `data class` imutável com validação declarativa no bloco `init`, aliada a construtores primários concisos:
+Em Kotlin 2.4, utilizamos `data class` imutável com validação declarativa no bloco `init`, aliada a construtores
+primários concisos:
 
 ```kotlin
 // ✅ GOOD (Kotlin 2.4): Separação estrita com data class e injeção primária
@@ -239,21 +254,34 @@ class UserService(
 ```
 
 > [!TIP]
-> **Concorrência e Virtual Threads**: Componentes com responsabilidade única que operam sobre records/data classes imutáveis e não mantêm estado mutável interno são naturalmente *thread-safe*. No Spring Boot 4.1.1+ sobre Java 25 com Virtual Threads ativadas (`spring.threads.virtual.enabled: true`), esses serviços escalam sem contenção de locks ou pinning de carrier threads. Para diretrizes de concorrência, consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+> **Concorrência e Virtual Threads**: Componentes com responsabilidade única que operam sobre records/data classes
+imutáveis e não mantêm estado mutável interno são naturalmente *thread-safe*. No Spring Boot 4.1.1+ sobre Java 25 com
+Virtual Threads ativadas (`spring.threads.virtual.enabled: true`), esses serviços escalam sem contenção de locks ou
+pinning de carrier threads. Para diretrizes de concorrência,
+consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 
 > [!NOTE]
-> Para manter funções pequenas e aplicar a Boy Scout Rule durante a refatoração do SRP, consulte o guia de [clean-code](../clean-code/SKILL.md).
+> Para manter funções pequenas e aplicar a Boy Scout Rule durante a refatoração do SRP, consulte o guia
+de [clean-code](../clean-code/SKILL.md).
 
 ---
 
 ## O - Open/Closed Principle (OCP)
 
-> *"Entidades de software (classes, módulos, funções) devem estar abertas para extensão, mas fechadas para modificação."* — Bertrand Meyer
+> *"Entidades de software (classes, módulos, funções) devem estar abertas para extensão, mas fechadas para
+modificação."* — Bertrand Meyer
 
-O princípio estabelece que você deve ser capaz de adicionar novos comportamentos ao sistema sem alterar o código existente que já está testado e operando em produção. Violações clássicas ocorrem quando novos requisitos (ex: um novo tipo de desconto, meio de pagamento ou canal de notificação) exigem a adição de ramos `if`/`else` ou `case` em classes centrais.
+O princípio estabelece que você deve ser capaz de adicionar novos comportamentos ao sistema sem alterar o código
+existente que já está testado e operando em produção. Violações clássicas ocorrem quando novos requisitos (ex: um novo
+tipo de desconto, meio de pagamento ou canal de notificação) exigem a adição de ramos `if`/`else` ou `case` em classes
+centrais.
 
 ### Rigor de Precisão Financeira
-Em cálculos fiscais, de taxas ou descontos, **nunca utilize `double` ou `float`**. O uso de tipos de ponto flutuante binário causa imprecisões catastróficas de arredondamento. Sempre utilize `BigDecimal` com escala explícita (ex: 6 casas decimais para cálculo intermediário, 2 para liquidação final) e modo de arredondamento financeiro padrão **`RoundingMode.HALF_EVEN`** (*Banker's Rounding*).
+
+Em cálculos fiscais, de taxas ou descontos, **nunca utilize `double` ou `float`**. O uso de tipos de ponto flutuante
+binário causa imprecisões catastróficas de arredondamento. Sempre utilize `BigDecimal` com escala explícita (ex: 6 casas
+decimais para cálculo intermediário, 2 para liquidação final) e modo de arredondamento financeiro padrão **
+`RoundingMode.HALF_EVEN`** (*Banker's Rounding*).
 
 ---
 
@@ -285,7 +313,9 @@ public class DiscountCalculator {
 
 ### Refatoração Idiomática em Java 25 LTS
 
-No Java 25, o OCP atinge seu ápice idiomático combinando **`sealed interface`** com records imutáveis e **Pattern Matching for switch** (JEP 441/440). Novos descontos são adicionados como novos records. O compilador garante exaustividade estrita em tempo de compilação sem necessidade de cláusulas `default`:
+No Java 25, o OCP atinge seu ápice idiomático combinando **`sealed interface`** com records imutáveis e **Pattern
+Matching for switch** (JEP 441/440). Novos descontos são adicionados como novos records. O compilador garante
+exaustividade estrita em tempo de compilação sem necessidade de cláusulas `default`:
 
 ```java
 // ✅ GOOD (Java 25): Extensão segura com sealed interface e pattern matching
@@ -364,7 +394,8 @@ public class DiscountService {
 
 ### Refatoração Idiomática em Kotlin 2.4+
 
-Em Kotlin 2.4, utilizamos `sealed interface` com `data class` avaliadas em expressões `when` exaustivas ou interfaces funcionais com lambdas:
+Em Kotlin 2.4, utilizamos `sealed interface` com `data class` avaliadas em expressões `when` exaustivas ou interfaces
+funcionais com lambdas:
 
 ```kotlin
 // ✅ GOOD (Kotlin 2.4): Sealed interface, avaliação exaustiva em when e precisão financeira
@@ -418,26 +449,37 @@ class DiscountService {
 ```
 
 > [!TIP]
-> Para aprofundar a implementação de regras extensíveis com os padrões **Strategy**, **Factory Method** e **Decorator**, consulte [design-patterns](../design-patterns/SKILL.md).
+> Para aprofundar a implementação de regras extensíveis com os padrões **Strategy**, **Factory Method** e **Decorator**,
+consulte [design-patterns](../design-patterns/SKILL.md).
 
 ---
 
 ## L - Liskov Substitution Principle (LSP)
 
-> *"Se $q(x)$ é uma propriedade demonstrável dos objetos $x$ de tipo $T$, então $q(y)$ deve ser verdadeiro para objetos $y$ de tipo $S$, onde $S$ é um subtipo de $T$."* — Barbara Liskov
+> *"Se $q (x)$ é uma propriedade demonstrável dos objetos $x$ de tipo $T$, então $q (y)$ deve ser verdadeiro para
+objetos $y$ de tipo $S$, onde $S$ é um subtipo de $T$."* — Barbara Liskov
 
-Em termos práticos de engenharia de software na JVM: **qualquer subclasse ou implementação de interface deve poder ser utilizada no lugar de sua classe/interface base sem que o cliente precise saber a diferença ou sofra falhas inesperadas de execução.**
+Em termos práticos de engenharia de software na JVM: **qualquer subclasse ou implementação de interface deve poder ser
+utilizada no lugar de sua classe/interface base sem que o cliente precise saber a diferença ou sofra falhas inesperadas
+de execução.**
 
 ### As Quatro Regras Formais do Contrato de Subtipagem
-1. **Pré-condições não podem ser fortalecidas**: O subtipo não pode exigir mais do que o tipo base exigia (ex: não pode proibir parâmetros que a interface base aceita).
-2. **Pós-condições não podem ser enfraquecidas**: O subtipo não pode entregar menos do que o tipo base garantia (ex: não pode retornar `null` onde a interface base garante `Optional` presente ou valor preenchido).
+
+1. **Pré-condições não podem ser fortalecidas**: O subtipo não pode exigir mais do que o tipo base exigia (ex: não pode
+   proibir parâmetros que a interface base aceita).
+2. **Pós-condições não podem ser enfraquecidas**: O subtipo não pode entregar menos do que o tipo base garantia (ex: não
+   pode retornar `null` onde a interface base garante `Optional` presente ou valor preenchido).
 3. **Invariantes devem ser mantidos**: Todas as regras de integridade do tipo base devem permanecer válidas no subtipo.
-4. **Regra de Histórico (Imutabilidade)**: O subtipo não pode permitir mutações de estado se a superclasse garantia imutabilidade.
+4. **Regra de Histórico (Imutabilidade)**: O subtipo não pode permitir mutações de estado se a superclasse garantia
+   imutabilidade.
 
 ### Violações Típicas no Mundo JVM Real
+
 - **Lançar `UnsupportedOperationException`**: Implementar uma interface ampla e lançar exceção em métodos indesejados.
-- **Checagens defensivas com `instanceof` / `is`**: Código cliente que precisa verificar o tipo concreto antes de invocar um método por medo do comportamento do subtipo.
-- **O Dilema Retângulo x Quadrado**: Sobrescrever setters de forma que alterar a largura altere implicitamente a altura, violando invariantes de retângulos matemáticos.
+- **Checagens defensivas com `instanceof` / `is`**: Código cliente que precisa verificar o tipo concreto antes de
+  invocar um método por medo do comportamento do subtipo.
+- **O Dilema Retângulo x Quadrado**: Sobrescrever setters de forma que alterar a largura altere implicitamente a altura,
+  violando invariantes de retângulos matemáticos.
 
 ---
 
@@ -516,7 +558,8 @@ void resize(Rectangle rect) {
 
 ### Refatoração Idiomática em Java 25 LTS
 
-Substituímos a herança incorreta por **`sealed interface`** e **records imutáveis**. Repositórios são segregados em interfaces de leitura e escrita:
+Substituímos a herança incorreta por **`sealed interface`** e **records imutáveis**. Repositórios são segregados em
+interfaces de leitura e escrita:
 
 ```java
 // ✅ GOOD (Java 25): Segregação estrita sem exceções de operação não suportada
@@ -627,10 +670,15 @@ data class Square(val side: Int) : Shape {
 
 > *"Clientes não devem ser forçados a depender de métodos que não utilizam."* — Robert C. Martin
 
-Interfaces inchadas ("Fat Interfaces") acoplam módulos a métodos irrelevantes para suas necessidades. Quando uma interface possui 15 ou 20 métodos misturando leitura, escrita, relatórios, auditoria e controle de ciclo de vida, qualquer alteração na assinatura de um método de relatório força a recompilação e reimplantação de componentes que apenas realizavam leitura simples.
+Interfaces inchadas ("Fat Interfaces") acoplam módulos a métodos irrelevantes para suas necessidades. Quando uma
+interface possui 15 ou 20 métodos misturando leitura, escrita, relatórios, auditoria e controle de ciclo de vida,
+qualquer alteração na assinatura de um método de relatório força a recompilação e reimplantação de componentes que
+apenas realizavam leitura simples.
 
 ### Sintomas de Violação
-- Implementações de interfaces contendo métodos vazios (`{ /* no-op */ }`) ou que lançam `UnsupportedOperationException`.
+
+- Implementações de interfaces contendo métodos vazios (`{ /* no-op */ }`) ou que lançam
+  `UnsupportedOperationException`.
 - Clientes que utilizam apenas 1 ou 2 métodos de uma interface com dezenas de operações.
 - Dificuldade para criar stubs ou fakes em testes unitários devido ao excesso de métodos a implementar.
 
@@ -683,7 +731,8 @@ public class RobotWorker implements Worker {
 
 ### Refatoração Idiomática em Java 25 LTS
 
-Segregamos a fat interface em **Role Interfaces** enxutas e coesas. Cada cliente depende estritamente do contrato que consome:
+Segregamos a fat interface em **Role Interfaces** enxutas e coesas. Cada cliente depende estritamente do contrato que
+consome:
 
 ```java
 // ✅ GOOD (Java 25): Role Interfaces específicas por capacidade
@@ -738,7 +787,9 @@ public class ProductionLine {
 
 ### Refatoração Idiomática em Kotlin 2.4+ (com Delegação de Classes `by`)
 
-No Kotlin 2.4, a segregação de interfaces atinge máxima elegância através do suporte nativo à **Delegação de Classes** com a palavra-chave **`by`**. Isso permite compor comportamentos a partir de implementações especializadas sem nenhum código boilerplate de métodos pass-through:
+No Kotlin 2.4, a segregação de interfaces atinge máxima elegância através do suporte nativo à **Delegação de Classes**
+com a palavra-chave **`by`**. Isso permite compor comportamentos a partir de implementações especializadas sem nenhum
+código boilerplate de métodos pass-through:
 
 ```kotlin
 // ✅ GOOD (Kotlin 2.4): Interfaces segregadas e composição via delegação nativa ('by')
@@ -793,20 +844,29 @@ class ProductionLine(private val workers: List<Workable>) {
 ```
 
 > [!TIP]
-> Para integrar SDKs ou APIs externas legadas que possuem interfaces infladas com seu domínio segregado, consulte o padrão **Adapter** em [design-patterns](../design-patterns/SKILL.md).
+> Para integrar SDKs ou APIs externas legadas que possuem interfaces infladas com seu domínio segregado, consulte o
+padrão **Adapter** em [design-patterns](../design-patterns/SKILL.md).
 
 ---
 
 ## D - Dependency Inversion Principle (DIP)
 
-> *"Módulos de alto nível não devem depender de módulos de baixo nível. Ambos devem depender de abstrações. Abstrações não devem depender de detalhes. Detalhes devem depender de abstrações."* — Robert C. Martin
+> *"Módulos de alto nível não devem depender de módulos de baixo nível. Ambos devem depender de abstrações. Abstrações
+não devem depender de detalhes. Detalhes devem depender de abstrações."* — Robert C. Martin
 
-O DIP inverte a árvore de dependências tradicional da programação procedural. Em vez de a lógica de negócio central (caso de uso / serviço de aplicação) instanciar diretamente adaptadores de banco de dados, drivers JDBC ou clientes HTTP de mensageria, ela declara **interfaces de domínio**. Os módulos de infraestrutura (Spring Data, mensageria, gateways de pagamento) é que passam a depender dessas interfaces de domínio para implementá-las.
+O DIP inverte a árvore de dependências tradicional da programação procedural. Em vez de a lógica de negócio central
+(caso de uso / serviço de aplicação) instanciar diretamente adaptadores de banco de dados, drivers JDBC ou clientes HTTP
+de mensageria, ela declara **interfaces de domínio**. Os módulos de infraestrutura (Spring Data, mensageria, gateways de
+pagamento) é que passam a depender dessas interfaces de domínio para implementá-las.
 
 ### Violações Típicas
+
 - Instanciação de implementações concretas dentro de serviços (`new PostgresOrderRepository()`).
-- Injeção em campo com anotação `@Autowired` (`@Autowired private OrderRepository repository;`). Isso impede a imutabilidade, oculta dependências reais e impede a execução de testes unitários sem levantar o container de injeção de dependências.
-- Vazamento de exceções técnicas de infraestrutura (`SQLException`, `SocketTimeoutException`, `MongoException`) diretamente na camada de domínio.
+- Injeção em campo com anotação `@Autowired` (`@Autowired private OrderRepository repository;`). Isso impede a
+  imutabilidade, oculta dependências reais e impede a execução de testes unitários sem levantar o container de injeção
+  de dependências.
+- Vazamento de exceções técnicas de infraestrutura (`SQLException`, `SocketTimeoutException`, `MongoException`)
+  diretamente na camada de domínio.
 
 ---
 
@@ -837,7 +897,9 @@ public class OrderService {
 
 ### Refatoração Idiomática em Java 25 & Spring Boot 4.1.1+
 
-No Spring Boot 4.1.1+ (Spring Framework 7.0), a injeção estrita é realizada via construtor único sem a necessidade de anotações `@Autowired`. As dependências são imutáveis (`final`), as interfaces pertencem à camada de domínio, e os erros de infraestrutura são encapsulados em tipos de domínio:
+No Spring Boot 4.1.1+ (Spring Framework 7.0), a injeção estrita é realizada via construtor único sem a necessidade de
+anotações `@Autowired`. As dependências são imutáveis (`final`), as interfaces pertencem à camada de domínio, e os erros
+de infraestrutura são encapsulados em tipos de domínio:
 
 ```java
 // ✅ GOOD (Java 25 & Spring Boot 4.1.1+): Injeção por construtor e abstrações de domínio
@@ -939,7 +1001,9 @@ public class InMemoryOrderRepository implements OrderRepository {
 
 ### Refatoração Idiomática em Kotlin 2.4 & Spring Boot 4.1.1+
 
-Em Kotlin 2.4, a injeção via construtor primário é expressa de forma concisa. Note o suporte ao plugin `kotlin-spring` (que aplica `all-open` automaticamente para classes `@Service` e métodos `@Transactional` para permitir proxies CGLIB do Spring Framework 7):
+Em Kotlin 2.4, a injeção via construtor primário é expressa de forma concisa. Note o suporte ao plugin `kotlin-spring`
+(que aplica `all-open` automaticamente para classes `@Service` e métodos `@Transactional` para permitir proxies CGLIB do
+Spring Framework 7):
 
 ```kotlin
 // ✅ GOOD (Kotlin 2.4 & Spring Boot 4.1.1+): Construtor primário conciso com suporte a all-open
@@ -987,7 +1051,12 @@ class InMemoryOrderRepository : OrderRepository {
 ```
 
 > [!IMPORTANT]
-> **Thread Safety em Serviços Singleton no Spring Boot**: Serviços injetados via DIP são instanciados como *Singletons* no Spring Boot. Eles **nunca devem manter estado mutável em campos de instância**. Em ambientes corporativos modernos rodando sobre Virtual Threads do Java 25 (`spring.threads.virtual.enabled: true`), centenas de requisições simultâneas compartilham a mesma instância do serviço. Qualquer estado mutável deve residir no escopo local da chamada do método ou em estruturas concorrentes com controle explícito. Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+> **Thread Safety em Serviços Singleton no Spring Boot**: Serviços injetados via DIP são instanciados como *Singletons*
+no Spring Boot. Eles **nunca devem manter estado mutável em campos de instância**. Em ambientes corporativos modernos
+rodando sobre Virtual Threads do Java 25 (`spring.threads.virtual.enabled: true`), centenas de requisições simultâneas
+compartilham a mesma instância do serviço. Qualquer estado mutável deve residir no escopo local da chamada do método ou
+em estruturas concorrentes com controle explícito.
+Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 
 ---
 
@@ -995,25 +1064,25 @@ class InMemoryOrderRepository : OrderRepository {
 
 Utilize este checklist prático durante auditorias de código e revisões de Pull Requests:
 
-| Princípio | Pergunta de Verificação | Sinal de Alerta (Code Smell) | Ação de Correção Recomendada |
-|---|---|---|---|
-| **SRP** | Esta classe possui apenas uma única razão para mudar? | Nomes com "And", "Manager", mais de 7 colaboradores injetados, múltiplos domínios. | Extrair classes especializadas para validação, persistência e efeitos colaterais. |
-| **OCP** | Para adicionar uma nova variação de negócio é necessário modificar código existente? | `switch` ou cadeias de `if/else` inspecionando `String` ou enum de tipo de negócio. | Migrar para `sealed interface` com pattern matching ou padrão Strategy. |
-| **LSP** | Qualquer subtipo pode substituir seu tipo base sem lançar exceções inesperadas? | `throw new UnsupportedOperationException()`, métodos no-op ou `instanceof` defensivo. | Segregar interfaces hierárquicas e adotar composição sobre herança. |
-| **ISP** | Algum cliente é forçado a implementar métodos que não utiliza? | Classes implementando interfaces com métodos vazios ou desnecessários para seu papel. | Decompor em Role Interfaces funcionais; em Kotlin, utilizar delegação `by`. |
-| **DIP** | A regra de negócio depende exclusivamente de interfaces do domínio? | `new ConcreteClass()` no meio do serviço, injeção com `@Autowired` em campo. | Injetar abstrações via construtor único sem anotações desnecessárias. |
+| Princípio | Pergunta de Verificação                                                              | Sinal de Alerta (Code Smell)                                                          | Ação de Correção Recomendada                                                      |
+|-----------|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| **SRP**   | Esta classe possui apenas uma única razão para mudar?                                | Nomes com "And", "Manager", mais de 7 colaboradores injetados, múltiplos domínios.    | Extrair classes especializadas para validação, persistência e efeitos colaterais. |
+| **OCP**   | Para adicionar uma nova variação de negócio é necessário modificar código existente? | `switch` ou cadeias de `if/else` inspecionando `String` ou enum de tipo de negócio.   | Migrar para `sealed interface` com pattern matching ou padrão Strategy.           |
+| **LSP**   | Qualquer subtipo pode substituir seu tipo base sem lançar exceções inesperadas?      | `throw new UnsupportedOperationException()`, métodos no-op ou `instanceof` defensivo. | Segregar interfaces hierárquicas e adotar composição sobre herança.               |
+| **ISP**   | Algum cliente é forçado a implementar métodos que não utiliza?                       | Classes implementando interfaces com métodos vazios ou desnecessários para seu papel. | Decompor em Role Interfaces funcionais; em Kotlin, utilizar delegação `by`.       |
+| **DIP**   | A regra de negócio depende exclusivamente de interfaces do domínio?                  | `new ConcreteClass()` no meio do serviço, injeção com `@Autowired` em campo.          | Injetar abstrações via construtor único sem anotações desnecessárias.             |
 
 ---
 
 ## Matriz de Cruzamento: SOLID x Design Patterns x Clean Code
 
-| Violação SOLID | Refatoração Recomendada | Padrão GoF Associado | Diretriz Clean Code |
-|---|---|---|---|
-| **SRP** (Serviço Monolítico) | Decomposição em serviços especializados e orquestrador | [Builder, Strategy, Observer](../design-patterns/SKILL.md) | [Funções Pequenas, Boy Scout Rule](../clean-code/SKILL.md) |
-| **OCP** (Switch de Tipos) | `sealed interface` + Pattern Matching | [Strategy, Factory Method](../design-patterns/SKILL.md) | [Polimorfismo sobre Condicionais](../clean-code/SKILL.md) |
-| **LSP** (Herança Quebrada) | Composição de interfaces imutáveis | [Adapter, Strategy](../design-patterns/SKILL.md) | [Princípio do Menor Espanto (POLA)](../clean-code/SKILL.md) |
-| **ISP** (Fat Interface) | Role Interfaces enxutas e delegação nativa | [Adapter, Decorator](../design-patterns/SKILL.md) | [Interfaces Focadas e YAGNI](../clean-code/SKILL.md) |
-| **DIP** (Acoplamento Rígido) | Injeção de dependência por construtor | [Factory Method, Abstract Factory](../design-patterns/SKILL.md) | [Separação de Construção e Uso](../clean-code/SKILL.md) |
+| Violação SOLID               | Refatoração Recomendada                                | Padrão GoF Associado                                            | Diretriz Clean Code                                         |
+|------------------------------|--------------------------------------------------------|-----------------------------------------------------------------|-------------------------------------------------------------|
+| **SRP** (Serviço Monolítico) | Decomposição em serviços especializados e orquestrador | [Builder, Strategy, Observer](../design-patterns/SKILL.md)      | [Funções Pequenas, Boy Scout Rule](../clean-code/SKILL.md)  |
+| **OCP** (Switch de Tipos)    | `sealed interface` + Pattern Matching                  | [Strategy, Factory Method](../design-patterns/SKILL.md)         | [Polimorfismo sobre Condicionais](../clean-code/SKILL.md)   |
+| **LSP** (Herança Quebrada)   | Composição de interfaces imutáveis                     | [Adapter, Strategy](../design-patterns/SKILL.md)                | [Princípio do Menor Espanto (POLA)](../clean-code/SKILL.md) |
+| **ISP** (Fat Interface)      | Role Interfaces enxutas e delegação nativa             | [Adapter, Decorator](../design-patterns/SKILL.md)               | [Interfaces Focadas e YAGNI](../clean-code/SKILL.md)        |
+| **DIP** (Acoplamento Rígido) | Injeção de dependência por construtor                  | [Factory Method, Abstract Factory](../design-patterns/SKILL.md) | [Separação de Construção e Uso](../clean-code/SKILL.md)     |
 
 ---
 
@@ -1021,18 +1090,27 @@ Utilize este checklist prático durante auditorias de código e revisões de Pul
 
 > [!WARNING]
 > **Alerta de Sobre-Engenharia**:
-> 1. **Não crie interfaces prematuras ("Interfaceitis")**: Se uma classe possui apenas uma única implementação concreta previsível e não faz I/O externo ou integração que justifique dublê de testes, criar `IUserService` e `UserServiceImpl` viola o princípio **YAGNI** (*You Aren't Gonna Need It*). Crie interfaces onde há variação polimórfica ou fronteira arquitetural real.
-> 2. **Composição sobre Herança**: Quase todas as violações de LSP decorrem de herança de código (`extends`) utilizada para mero reaproveitamento de código em vez de relação genuína "é um". Prefira sempre compor objetos por injeção.
-> 3. **Imutabilidade Estrutural**: Sempre que possível, utilize `record` no Java 25 e `data class` no Kotlin 2.4. Objetos imutáveis eliminam dezenas de bugs sutis de concorrência e quebras de invariantes de estado.
+> 1. **Não crie interfaces prematuras ("Interfaceitis")**: Se uma classe possui apenas uma única implementação concreta
+     previsível e não faz I/O externo ou integração que justifique dublê de testes, criar `IUserService` e
+     `UserServiceImpl` viola o princípio **YAGNI** (*You Aren't Gonna Need It*). Crie interfaces onde há variação
+     polimórfica ou fronteira arquitetural real.
+> 2. **Composição sobre Herança**: Quase todas as violações de LSP decorrem de herança de código (`extends`) utilizada
+     para mero reaproveitamento de código em vez de relação genuína "é um". Prefira sempre compor objetos por injeção.
+> 3. **Imutabilidade Estrutural**: Sempre que possível, utilize `record` no Java 25 e `data class` no Kotlin 2.4.
+     Objetos imutáveis eliminam dezenas de bugs sutis de concorrência e quebras de invariantes de estado.
 
 ---
 
 ## Habilidades Relacionadas
 
-- **[Clean Code](../clean-code/SKILL.md)**: Diretrizes complementares para nomenclatura expressiva, funções de responsabilidade única, regras DRY, KISS, YAGNI e Boy Scout Rule.
-- **[Design Patterns](../design-patterns/SKILL.md)**: Implementações canônicas dos padrões GoF (Strategy, Factory Method, Adapter, Decorator, Builder) que concretizam os princípios SOLID.
-- **[Revisão de Concorrência Java 21/25](../concurrency-java21-review/SKILL.md)**: Regras essenciais para execução thread-safe de serviços singleton sob Virtual Threads (Project Loom), locks e eliminação de thread pinning.
-- **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Boas práticas de segurança aplicadas à validação de domínio e controle de acesso (OWASP Top 10:2025).
+- **[Clean Code](../clean-code/SKILL.md)**: Diretrizes complementares para nomenclatura expressiva, funções de
+  responsabilidade única, regras DRY, KISS, YAGNI e Boy Scout Rule.
+- **[Design Patterns](../design-patterns/SKILL.md)**: Implementações canônicas dos padrões GoF (Strategy, Factory
+  Method, Adapter, Decorator, Builder) que concretizam os princípios SOLID.
+- **[Revisão de Concorrência Java 21/25](../concurrency-java21-review/SKILL.md)**: Regras essenciais para execução
+  thread-safe de serviços singleton sob Virtual Threads (Project Loom), locks e eliminação de thread pinning.
+- **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Boas práticas de segurança aplicadas
+  à validação de domínio e controle de acesso (OWASP Top 10:2025).
 
 ---
 

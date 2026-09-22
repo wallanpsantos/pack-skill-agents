@@ -6,7 +6,7 @@ Threads/CompletableFuture. **JVM target only** — see "Out of scope" in `SKILL.
 Kotlin/Native, Kotlin/JS, Kotlin/Wasm, and mobile/frontend code.
 
 Baseline: Kotlin 2.4+ compiled to a Java 25 JVM bytecode target, `kotlinx-coroutines-core` (JVM artifact), Spring Boot
->= 4.1.1 / Spring Framework >= 7.0.8 / Spring Security >= 7.1 when Spring is present.
+> = 4.1.1 / Spring Framework >= 7.0.8 / Spring Security >= 7.1 when Spring is present.
 
 **Scope of this file.** Classic shared-mutable-state issues (races, visibility, deadlocks, `@Volatile`,
 `AtomicReference`), Virtual Thread internals and pinning, CPU-bound parallelism internals, and Kubernetes/cloud-native
@@ -21,13 +21,13 @@ boundary.
 
 Both solve "cheap concurrency for blocking-shaped work", at different layers:
 
-| | Virtual Thread | Kotlin coroutine |
-|---|---|---|
-| Unit of concurrency | `java.lang.Thread` (virtual) | Suspendable computation — no dedicated thread of its own |
-| Blocking | Normal — that is the point | Never blocks *while suspended*; a blocking call made from coroutine code still blocks whatever thread is running it at that moment |
-| Cancellation | Cooperative, via interruption | Cooperative, via `Job` cancellation + `isActive` / `ensureActive()` |
-| Structured concurrency | Only `StructuredTaskScope` — **preview, rejected under this baseline** | `coroutineScope` / `supervisorScope` — **stable for many `kotlinx.coroutines` releases, unaffected by the Java preview boundary** |
-| Context propagation | `ScopedValue` (same dynamic scope only) | `CoroutineContext` elements (`ThreadContextElement`) — designed to survive dispatcher switches |
+|                        | Virtual Thread                                                         | Kotlin coroutine                                                                                                                   |
+|------------------------|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Unit of concurrency    | `java.lang.Thread` (virtual)                                           | Suspendable computation — no dedicated thread of its own                                                                           |
+| Blocking               | Normal — that is the point                                             | Never blocks *while suspended*; a blocking call made from coroutine code still blocks whatever thread is running it at that moment |
+| Cancellation           | Cooperative, via interruption                                          | Cooperative, via `Job` cancellation + `isActive` / `ensureActive()`                                                                |
+| Structured concurrency | Only `StructuredTaskScope` — **preview, rejected under this baseline** | `coroutineScope` / `supervisorScope` — **stable for many `kotlinx.coroutines` releases, unaffected by the Java preview boundary**  |
+| Context propagation    | `ScopedValue` (same dynamic scope only)                                | `CoroutineContext` elements (`ThreadContextElement`) — designed to survive dispatcher switches                                     |
 
 **Default for a blocking Spring MVC service** (Boot 4.1, `spring.threads.virtual.enabled=true`): write plain,
 idiomatic, blocking Kotlin and let the container run it on a Virtual Thread. Coroutines add a second concurrency
@@ -45,12 +45,12 @@ a Virtual Thread somewhere inside it obscures which cancellation and timeout mod
 
 ## 2. Dispatchers
 
-| Dispatcher | Backing | Use for | Do not use for |
-|---|---|---|---|
-| `Dispatchers.Default` | Shared pool sized to `availableProcessors()` (minimum 2) | CPU-bound work | Blocking I/O — starves the pool it shares with `Dispatchers.IO` |
-| `Dispatchers.IO` | Elastic pool, capped at 64 threads or the core count (whichever is larger); the cap is configurable via the `kotlinx.coroutines.io.parallelism` system property and hard-limited by `kotlinx.coroutines.scheduler.max.pool.size` | Blocking I/O you don't control (a blocking JDBC driver, a blocking HTTP client) | CPU-bound work — the cap is not a compute budget |
-| `Dispatchers.Unconfined` | No dedicated thread; resumes on whichever thread signalled the coroutine's continuation | Rare — tests, specific immediate-continuation tricks | General backend code. Spring's own use of it as the default for `suspend` controllers is a known trade-off, not a pattern to imitate elsewhere (§3) |
-| Custom (`someExecutor.asCoroutineDispatcher()`) | Whatever `Executor` you hand it | A dedicated pool for one downstream dependency, or a Virtual-Thread bridge (§4) | — |
+| Dispatcher                                      | Backing                                                                                                                                                                                                                          | Use for                                                                         | Do not use for                                                                                                                                      |
+|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Dispatchers.Default`                           | Shared pool sized to `availableProcessors()` (minimum 2)                                                                                                                                                                         | CPU-bound work                                                                  | Blocking I/O — starves the pool it shares with `Dispatchers.IO`                                                                                     |
+| `Dispatchers.IO`                                | Elastic pool, capped at 64 threads or the core count (whichever is larger); the cap is configurable via the `kotlinx.coroutines.io.parallelism` system property and hard-limited by `kotlinx.coroutines.scheduler.max.pool.size` | Blocking I/O you don't control (a blocking JDBC driver, a blocking HTTP client) | CPU-bound work — the cap is not a compute budget                                                                                                    |
+| `Dispatchers.Unconfined`                        | No dedicated thread; resumes on whichever thread signalled the coroutine's continuation                                                                                                                                          | Rare — tests, specific immediate-continuation tricks                            | General backend code. Spring's own use of it as the default for `suspend` controllers is a known trade-off, not a pattern to imitate elsewhere (§3) |
+| Custom (`someExecutor.asCoroutineDispatcher()`) | Whatever `Executor` you hand it                                                                                                                                                                                                  | A dedicated pool for one downstream dependency, or a Virtual-Thread bridge (§4) | —                                                                                                                                                   |
 
 `Dispatchers.IO` and `Dispatchers.Default` **share their underlying threads** — switching from `Default` to `IO` (or
 back) via `withContext` frequently does *not* move execution to a different thread. Do not assume a `withContext`
@@ -81,10 +81,10 @@ dispatcher argument run on the parent scope's dispatcher, which in a hand-built 
 
 ## 3. Spring integration — `Dispatchers.Unconfined` for suspend controllers
 
-As of Spring Framework 7 — **verify against the exact patch release you run; there is an open enhancement discussion
-(`spring-projects/spring-framework#33788`) about a Virtual-Thread-backed alternative, so do not assume this has
-changed without checking** — Spring MVC and WebFlux both invoke a `suspend` `@Controller`/`@RestController` method on
-**`Dispatchers.Unconfined`**. In practice:
+As of Spring Framework 7 — **verify against the exact patch release you run; there is an open enhancement discussion (
+`spring-projects/spring-framework#33788`) about a Virtual-Thread-backed alternative, so do not assume this has
+changed without checking** — Spring MVC and WebFlux both invoke a `suspend` `@Controller`/`@RestController` method on **
+`Dispatchers.Unconfined`**. In practice:
 
 - The method body runs on the request-handling thread **up to its first suspension point**.
 - After that first suspension, it resumes on whatever thread the suspended call's own machinery uses to signal
@@ -191,11 +191,11 @@ parameter/data class, over assuming a `ThreadLocal` read before a suspension poi
 - `withContext(NonCancellable)` is the escape hatch for cleanup that must run even after cancellation (closing a
   resource, releasing a `Mutex`) — do not wrap ordinary work in it just to sidestep cancellation handling.
 - `runBlocking` parks the calling thread until its block completes. Calling it from:
-  - `main`, a CLI entry point, a `@Scheduled`/Quartz job running on its own thread — fine; this is the intended bridge
-    from synchronous to suspending code.
-  - a Virtual Thread already serving a request, or a Netty/event-loop thread — defeats the model: that thread cannot
-    be reused while `runBlocking` waits, the coroutine equivalent of an unbounded `future.join()` on a request thread
-    (`completable-future.md` §5).
+    - `main`, a CLI entry point, a `@Scheduled`/Quartz job running on its own thread — fine; this is the intended bridge
+      from synchronous to suspending code.
+    - a Virtual Thread already serving a request, or a Netty/event-loop thread — defeats the model: that thread cannot
+      be reused while `runBlocking` waits, the coroutine equivalent of an unbounded `future.join()` on a request thread
+      (`completable-future.md` §5).
 - A blocking call (a blocking JDBC driver, `Thread.sleep`, a blocking HTTP client) made directly inside a coroutine
   body **without** `withContext(Dispatchers.IO)` blocks whatever thread is currently running that coroutine — which
   may be a `Dispatchers.Default` thread shared with unrelated CPU-bound work elsewhere in the application.

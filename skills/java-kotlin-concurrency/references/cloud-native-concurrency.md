@@ -14,13 +14,13 @@ VT stacks live on the **Java heap**. Moving from platform threads to VTs shifts 
 # ❌ Same -Xmx as before the VT migration → OOM under peak load
 resources:
   requests: { memory: "512Mi" }
-  limits:   { memory: "512Mi" }
+  limits: { memory: "512Mi" }
 # JVM: -Xmx256m
 
 # ✅ Room for VT stack frames at peak concurrency
 resources:
   requests: { memory: "768Mi" }
-  limits:   { memory: "768Mi" }
+  limits: { memory: "768Mi" }
 # JVM: -Xmx512m
 ```
 
@@ -37,7 +37,7 @@ limits are set. Without limits the JVM sees every host CPU and over-provisions p
 ```yaml
 # ✅ Set CPU limits so the JVM reads the correct processor count
 resources:
-  limits:   { cpu: "2" }
+  limits: { cpu: "2" }
   requests: { cpu: "1" }
 ```
 
@@ -65,12 +65,12 @@ Containers with 1 CPU or fractional CPUs commonly cause JVM ergonomics to select
 ```yaml
 # ❌ Single CPU → SerialGC, long STW pauses, no real parallelism
 resources:
-  limits:   { cpu: "1" }
+  limits: { cpu: "1" }
   requests: { cpu: "500m" }
 
 # ✅ >= 2 CPUs → G1GC with parallel collectors
 resources:
-  limits:   { cpu: "2" }
+  limits: { cpu: "2" }
   requests: { cpu: "1" }
 ```
 
@@ -113,14 +113,15 @@ readinessProbe:
 
 ## 6. GraalVM Native Image + Virtual Threads
 
-| Constraint                                | Impact                                     | Mitigation                                    |
-|-------------------------------------------|--------------------------------------------|-----------------------------------------------|
-| Dynamic class loading during VT execution | May pin the carrier                        | Pre-load critical classes at startup          |
-| JNI / native calls inside VTs             | Pin carriers (same as on the JVM)          | Minimize JNI on hot VT paths                  |
-| AOT compilation (no JIT)                  | Faster startup; potentially lower peak TPS | Benchmark both modes; tune PGO                |
-| Reflection / proxies                      | Must be declared in reachability metadata  | Capture with the native-image agent           |
+| Constraint                                | Impact                                     | Mitigation                           |
+|-------------------------------------------|--------------------------------------------|--------------------------------------|
+| Dynamic class loading during VT execution | May pin the carrier                        | Pre-load critical classes at startup |
+| JNI / native calls inside VTs             | Pin carriers (same as on the JVM)          | Minimize JNI on hot VT paths         |
+| AOT compilation (no JIT)                  | Faster startup; potentially lower peak TPS | Benchmark both modes; tune PGO       |
+| Reflection / proxies                      | Must be declared in reachability metadata  | Capture with the native-image agent  |
 
 ```java
+
 @EventListener(ApplicationReadyEvent.class)
 public void warmUp() throws ClassNotFoundException {
     Class.forName("com.example.CriticalService");
@@ -147,13 +148,13 @@ java -XX:StartFlightRecording=name=production,\
 > **Critical:** continuous JFR with `maxage` and **without `maxsize`** can grow disk/off-heap during activity bursts and
 > trigger container OOM-kills (Evans et al., Ch. 12). Always specify `maxsize`.
 
-| Event                            | Priority | Alert on                                  |
-|----------------------------------|----------|-------------------------------------------|
-| `jdk.VirtualThreadSubmitFailed`  | Critical | Any occurrence (carrier pool exhausted)   |
-| `jdk.VirtualThreadPinned`        | High     | Occurrences above 50 ms (default 20 ms)   |
-| `jdk.MonitorEnter`               | Medium   | Long contention on hot monitors           |
-| `jdk.GarbageCollection`          | Medium   | P99 pause above SLA                       |
-| `jdk.ThreadStart` / `ThreadEnd`  | Low      | Platform thread count changes             |
+| Event                           | Priority | Alert on                                |
+|---------------------------------|----------|-----------------------------------------|
+| `jdk.VirtualThreadSubmitFailed` | Critical | Any occurrence (carrier pool exhausted) |
+| `jdk.VirtualThreadPinned`       | High     | Occurrences above 50 ms (default 20 ms) |
+| `jdk.MonitorEnter`              | Medium   | Long contention on hot monitors         |
+| `jdk.GarbageCollection`         | Medium   | P99 pause above SLA                     |
+| `jdk.ThreadStart` / `ThreadEnd` | Low      | Platform thread count changes           |
 
 `-Djdk.tracePinnedThreads` was removed in JDK 24 and has no effect — do not put it in container manifests.
 

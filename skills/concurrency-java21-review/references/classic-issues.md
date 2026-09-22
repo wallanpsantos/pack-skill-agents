@@ -29,7 +29,8 @@ count.updateAndGet(c -> c < MAX ? c + 1 : c);
 
 ## 2. Visibility & Weak Memory Models (x86 vs. ARM)
 
-The Java Memory Model (JMM) defines abstract visibility rules, but underlying hardware architectures enforce different physical memory ordering.
+The Java Memory Model (JMM) defines abstract visibility rules, but underlying hardware architectures enforce different
+physical memory ordering.
 
 ```java
 // ❌ Implicit reliance on x86 TSO (Total Store Order)
@@ -51,7 +52,9 @@ if (ready) {
 private volatile boolean ready;
 ```
 
-> **Hardware Trap:** Code passing tests on x86 developer workstations can silently expose visibility and reordering bugs when deployed on ARM architecture (AWS Graviton) due to weaker hardware store/load ordering guarantees (Evans et al., 2024, Ch. 7 & 13).
+> **Hardware Trap:** Code passing tests on x86 developer workstations can silently expose visibility and reordering bugs
+> when deployed on ARM architecture (AWS Graviton) due to weaker hardware store/load ordering guarantees (Evans et al.,
+> 2024, Ch. 7 & 13).
 
 ---
 
@@ -73,7 +76,8 @@ public void increment() { counter.incrementAndGet(); }
 
 ## 4. High Contention CAS Loops vs. LongAdder
 
-`AtomicInteger` and `AtomicLong` use Compare-And-Swap (CAS) spin loops (`compareAndSet`). Under high thread contention, CAS operations repeatedly fail and retry, causing linear CPU throughput degradation.
+`AtomicInteger` and `AtomicLong` use Compare-And-Swap (CAS) spin loops (`compareAndSet`). Under high thread contention,
+CAS operations repeatedly fail and retry, causing linear CPU throughput degradation.
 
 ```java
 // ❌ Under high multi-thread contention, AtomicLong CAS loop spins continuously, wasting CPU cycles
@@ -92,13 +96,16 @@ public long getTotal() {
 }
 ```
 
-> **Recommendation:** Use `LongAdder` or `LongAccumulator` for high-concurrency statistics, metrics, and throughput counters where reads are far less frequent than writes (Evans et al., 2024, Ch. 13).
+> **Recommendation:** Use `LongAdder` or `LongAccumulator` for high-concurrency statistics, metrics, and throughput
+> counters where reads are far less frequent than writes (Evans et al., 2024, Ch. 13).
 
 ---
 
 ## 5. Cache Line False Sharing
 
-CPU cores cache memory in cache lines (typically 64 bytes). When independent variables mutated by different threads reside on the same 64-byte cache line, modifying one field invalidates the entire cache line in other CPU cores' L1/L2 caches (cache coherence traffic), causing severe performance degradation.
+CPU cores cache memory in cache lines (typically 64 bytes). When independent variables mutated by different threads
+reside on the same 64-byte cache line, modifying one field invalidates the entire cache line in other CPU cores' L1/L2
+caches (cache coherence traffic), causing severe performance degradation.
 
 ```java
 // ❌ False sharing: head and tail live on the same 64-byte cache line
@@ -117,7 +124,8 @@ public class RingBuffer {
 }
 ```
 
-> **Note:** Using `@jdk.internal.vm.annotation.Contended` in application code requires the JVM flag `-XX:-RestrictContended` (Evans et al., 2024, Ch. 7).
+> **Note:** Using `@jdk.internal.vm.annotation.Contended` in application code requires the JVM flag
+> `-XX:-RestrictContended` (Evans et al., 2024, Ch. 7).
 
 ---
 
@@ -155,7 +163,8 @@ public static Singleton getInstance() {
 
 ## 7. Volatile Graceful Shutdown Pattern
 
-For worker threads running task loops, use a `volatile` flag coupled with interrupt checks to ensure cooperative, timely shutdown without leaving resources in an inconsistent state.
+For worker threads running task loops, use a `volatile` flag coupled with interrupt checks to ensure cooperative, timely
+shutdown without leaving resources in an inconsistent state.
 
 ```java
 // ✅ Standard volatile shutdown flag + interrupt propagation
@@ -181,13 +190,15 @@ public class ServerWorker implements Runnable {
 }
 ```
 
-> Ensure the worker loop checks both `running` and `!Thread.currentThread().isInterrupted()` to handle both cooperative stop signals and thread pool cancellation (Evans et al., 2024, Ch. 13 & Rahman, 2026, Ch. 3).
+> Ensure the worker loop checks both `running` and `!Thread.currentThread().isInterrupted()` to handle both cooperative
+> stop signals and thread pool cancellation (Evans et al., 2024, Ch. 13 & Rahman, 2026, Ch. 3).
 
 ---
 
 ## 8. Spinlocks (`Thread.onSpinWait()`) vs. Thread Parking (`LockSupport.park()`)
 
-Choosing between busy-waiting (spinlocks) and sleeping/parking threads directly impacts CPU utilization and thread responsiveness.
+Choosing between busy-waiting (spinlocks) and sleeping/parking threads directly impacts CPU utilization and thread
+responsiveness.
 
 ```java
 // ❌ Spinlock for long or unknown durations consumes 100% CPU core power and starves carrier threads
@@ -205,8 +216,12 @@ LockSupport.park(this);
 ```
 
 ### Selection Guidelines
-1. **Spinlocks (`Thread.onSpinWait()`):** Acceptable ONLY when lock hold time is guaranteed to be extremely short (< expected thread context switch latency, typically < 100 ns). Avoids context switch overhead.
-2. **Thread Parking (`LockSupport.park()` / `ReentrantLock`):** Required when wait duration is unknown or > 1 µs. Relinquishes CPU cores to the OS scheduler or Virtual Thread carrier pool, preventing CPU starvation (Evans et al., 2024, Ch. 13).
+
+1. **Spinlocks (`Thread.onSpinWait()`):** Acceptable ONLY when lock hold time is guaranteed to be extremely short (<
+   expected thread context switch latency, typically < 100 ns). Avoids context switch overhead.
+2. **Thread Parking (`LockSupport.park()` / `ReentrantLock`):** Required when wait duration is unknown or > 1 µs.
+   Relinquishes CPU cores to the OS scheduler or Virtual Thread carrier pool, preventing CPU starvation (Evans et al.,
+   2024, Ch. 13).
 
 ---
 
@@ -291,12 +306,12 @@ public void process() throws InterruptedException {
 
 ## 12. Thread-Safe Collections
 
-| Use Case                        | Wrong        | Right                    |
-|---------------------------------|--------------|--------------------------|
-| Concurrent map                  | `HashMap`    | `ConcurrentHashMap`      |
-| Rare writes, lots of iteration  | CHM          | `CopyOnWriteArrayList`   |
-| Producer-consumer               | `ArrayList`  | `BlockingQueue`          |
-| Sorted concurrent map           | `TreeMap`    | `ConcurrentSkipListMap`  |
+| Use Case                       | Wrong       | Right                   |
+|--------------------------------|-------------|-------------------------|
+| Concurrent map                 | `HashMap`   | `ConcurrentHashMap`     |
+| Rare writes, lots of iteration | CHM         | `CopyOnWriteArrayList`  |
+| Producer-consumer              | `ArrayList` | `BlockingQueue`         |
+| Sorted concurrent map          | `TreeMap`   | `ConcurrentSkipListMap` |
 
 ---
 
@@ -357,5 +372,7 @@ Object value = cache.computeIfAbsent(key, k -> loadFromSource(k));
 
 ## 16. References & Citations
 
-- **Evans, B. J., Gough, J., & Newland, C.** (2024). *Optimizing Cloud Native Java: Efficient Microservices in Kubernetes and Cloud Environments*. O'Reilly Media. (Chapters 7, 13).
-- **Rahman, A.N.M. Bazlur** (2026). *Modern Concurrency in Java: Multi-threading, Virtual Threads, and Structured Concurrency*. O'Reilly Media. (Chapter 3).
+- **Evans, B. J., Gough, J., & Newland, C.** (2024). *Optimizing Cloud Native Java: Efficient Microservices in
+  Kubernetes and Cloud Environments*. O'Reilly Media. (Chapters 7, 13).
+- **Rahman, A.N.M. Bazlur** (2026). *Modern Concurrency in Java: Multi-threading, Virtual Threads, and Structured
+  Concurrency*. O'Reilly Media. (Chapter 3).

@@ -5,13 +5,15 @@ description: Padrões de projeto GoF e padrões arquiteturais idiomáticos para 
 
 # Design Patterns Skill
 
-Catálogo de padrões de projeto GoF (*Gang of Four*) e padrões arquiteturais modernos, implementados de forma idiomática para a plataforma JVM moderna com **Java 25 LTS**, **Kotlin 2.4+** e **Spring Boot 4.1.1+**.
+Catálogo de padrões de projeto GoF (*Gang of Four*) e padrões arquiteturais modernos, implementados de forma idiomática
+para a plataforma JVM moderna com **Java 25 LTS**, **Kotlin 2.4+** e **Spring Boot 4.1.1+**.
 
 ---
 
 ## Quando Usar
 
-- O usuário solicita: "implemente o padrão Factory", "use Strategy aqui", "como estruturar um Builder", "como desacoplar via Observer".
+- O usuário solicita: "implemente o padrão Factory", "use Strategy aqui", "como estruturar um Builder", "como desacoplar
+  via Observer".
 - Desenho de arquitetura de classes e limites de módulos desacoplados.
 - Refatoração de estruturas condicionais extensas (`if`/`else` ou `switch` legados) para polimorfismo seguro.
 - Eliminação de acoplamento direto com código legado ou APIs externas via adaptadores.
@@ -22,59 +24,75 @@ Catálogo de padrões de projeto GoF (*Gang of Four*) e padrões arquiteturais m
 
 ## Matriz GoF vs Idiomas Modernos da JVM
 
-As linguagens modernas da JVM transformaram a forma como os padrões clássicos do GoF são implementados. Recursos nativos de linguagem substituem grande parte da cerimônia e código boilerplate original:
+As linguagens modernas da JVM transformaram a forma como os padrões clássicos do GoF são implementados. Recursos nativos
+de linguagem substituem grande parte da cerimônia e código boilerplate original:
 
-| Padrão GoF | Abordagem Clássica (Java 8-) | Idioma Java 25 LTS | Idioma Kotlin 2.4+ |
-|---|---|---|---|
-| **Builder** | Classe interna estática com métodos fluentes e cópia de campos | Fluent Builder imutável ou `record` com canonical constructor | Argumentos nomeados com valores default; DSL Builder com `@DslMarker` |
-| **Factory Method** | Hierarquia de classes criadoras abstratas e concretas | Static factories em `record`/interfaces com pattern matching `switch` | Companion object factory functions, top-level functions e SAM |
-| **Singleton** | Instância estática com double-checked locking ou Enum | Spring `@Component` (DI) ou `enum` para lógica de negócio pura | Declaração nativa `object` (thread-safe, lazy na JVM) ou Spring Bean |
-| **Strategy** | Interface com classes concretas implementando algoritmo | `sealed interface` com pattern matching ou `@FunctionalInterface` | First-class functions `(T) -> R`, `fun interface` ou `sealed class/interface` |
-| **Observer** | Interface `Observer`/`Observable` legada manual | Spring `ApplicationEventPublisher` + `@EventListener` / `@TransactionalEventListener` | `Delegates.observable`, Spring Events idiomáticos ou Flow/Coroutines |
-| **Template Method** | Superclasse abstrata com métodos hook protegidos | Classe abstrata com método template `final` e passos protegidos | Higher-Order Functions com trailing lambdas (composição sobre herança) |
-| **Decorator** | Subclasses com delegação manual para instância encapsulada | Composição de interfaces com delegação explícita por construtor | Delegação de classes nativa via palavra-chave `by` (`class D(...) : I by delegate`) |
-| **Adapter** | Wrapper clássico ou herança múltipla de interfaces | Wrapper clássico com injeção de dependência por construtor | Extension functions para mapeamento de dados ou object adapter via `by` |
+| Padrão GoF          | Abordagem Clássica (Java 8-)                                   | Idioma Java 25 LTS                                                                    | Idioma Kotlin 2.4+                                                                  |
+|---------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| **Builder**         | Classe interna estática com métodos fluentes e cópia de campos | Fluent Builder imutável ou `record` com canonical constructor                         | Argumentos nomeados com valores default; DSL Builder com `@DslMarker`               |
+| **Factory Method**  | Hierarquia de classes criadoras abstratas e concretas          | Static factories em `record`/interfaces com pattern matching `switch`                 | Companion object factory functions, top-level functions e SAM                       |
+| **Singleton**       | Instância estática com double-checked locking ou Enum          | Spring `@Component` (DI) ou `enum` para lógica de negócio pura                        | Declaração nativa `object` (thread-safe, lazy na JVM) ou Spring Bean                |
+| **Strategy**        | Interface com classes concretas implementando algoritmo        | `sealed interface` com pattern matching ou `@FunctionalInterface`                     | First-class functions `(T) -> R`, `fun interface` ou `sealed class/interface`       |
+| **Observer**        | Interface `Observer`/`Observable` legada manual                | Spring `ApplicationEventPublisher` + `@EventListener` / `@TransactionalEventListener` | `Delegates.observable`, Spring Events idiomáticos ou Flow/Coroutines                |
+| **Template Method** | Superclasse abstrata com métodos hook protegidos               | Classe abstrata com método template `final` e passos protegidos                       | Higher-Order Functions com trailing lambdas (composição sobre herança)              |
+| **Decorator**       | Subclasses com delegação manual para instância encapsulada     | Composição de interfaces com delegação explícita por construtor                       | Delegação de classes nativa via palavra-chave `by` (`class D(...) : I by delegate`) |
+| **Adapter**         | Wrapper clássico ou herança múltipla de interfaces             | Wrapper clássico com injeção de dependência por construtor                            | Extension functions para mapeamento de dados ou object adapter via `by`             |
 
 ---
 
 ## Como o SOLID Direciona os Design Patterns
 
-Padrões de projeto não existem no vácuo; são soluções consagradas para violações dos princípios SOLID. Para um aprofundamento nos princípios fundamentais, consulte [solid-principles](../solid-principles/SKILL.md).
+Padrões de projeto não existem no vácuo; são soluções consagradas para violações dos princípios SOLID. Para um
+aprofundamento nos princípios fundamentais, consulte [solid-principles](../solid-principles/SKILL.md).
 
 - **SRP (Single Responsibility Principle)**:
-  - **Builder**: Separa a responsabilidade de construção e validação da representação dos dados de domínio.
-  - **Strategy**: Isola cada algoritmo em sua própria unidade coesa, aliviando a classe de contexto de múltiplas razões para mudar.
-  - **Observer**: Separa o processamento do caso de uso principal da execução de efeitos colaterais e notificações.
-  - **Decorator**: Separa responsabilidades transversais (ex: métricas, auditoria, formatação) da lógica central.
+    - **Builder**: Separa a responsabilidade de construção e validação da representação dos dados de domínio.
+    - **Strategy**: Isola cada algoritmo em sua própria unidade coesa, aliviando a classe de contexto de múltiplas
+      razões para mudar.
+    - **Observer**: Separa o processamento do caso de uso principal da execução de efeitos colaterais e notificações.
+    - **Decorator**: Separa responsabilidades transversais (ex: métricas, auditoria, formatação) da lógica central.
 - **OCP (Open/Closed Principle)**:
-  - **Strategy**: Permite adicionar novos algoritmos criando novas classes ou lambdas sem alterar o contexto consumidor.
-  - **Template Method**: Mantém o esqueleto do algoritmo fechado para modificação enquanto passos específicos estão abertos para extensão.
-  - **Decorator**: Permite adicionar responsabilidades a um objeto em tempo de execução sem modificar seu código original.
+    - **Strategy**: Permite adicionar novos algoritmos criando novas classes ou lambdas sem alterar o contexto
+      consumidor.
+    - **Template Method**: Mantém o esqueleto do algoritmo fechado para modificação enquanto passos específicos estão
+      abertos para extensão.
+    - **Decorator**: Permite adicionar responsabilidades a um objeto em tempo de execução sem modificar seu código
+      original.
 - **LSP (Liskov Substitution Principle)**:
-  - **Adapter**: Garante que o adaptador honre o contrato da interface alvo sem quebrar as expectativas do cliente.
-  - **Strategy & Decorator**: Todas as variantes e decoradores compartilham a mesma abstração, sendo intercambiáveis com segurança.
+    - **Adapter**: Garante que o adaptador honre o contrato da interface alvo sem quebrar as expectativas do cliente.
+    - **Strategy & Decorator**: Todas as variantes e decoradores compartilham a mesma abstração, sendo intercambiáveis
+      com segurança.
 - **ISP (Interface Segregation Principle)**:
-  - **Adapter**: Expõe uma interface fina e focada no cliente, ocultando interfaces externas densas e poluídas.
+    - **Adapter**: Expõe uma interface fina e focada no cliente, ocultando interfaces externas densas e poluídas.
 - **DIP (Dependency Inversion Principle)**:
-  - **Factory Method**: O cliente depende da abstração do produto, delegando a instanciação concreta ao mecanismo de fábrica.
-  - **Strategy**: O contexto depende da interface abstrata da estratégia, recebendo-a via injeção de dependência.
+    - **Factory Method**: O cliente depende da abstração do produto, delegando a instanciação concreta ao mecanismo de
+      fábrica.
+    - **Strategy**: O contexto depende da interface abstrata da estratégia, recebendo-a via injeção de dependência.
 
 ---
 
 ## Regra Monetária Inviolável (Domínio Financeiro)
 
-Em conformidade com os padrões de engenharia bancária e de meios de pagamento, **qualquer representação monetária deve seguir rigorosamente as regras abaixo**:
+Em conformidade com os padrões de engenharia bancária e de meios de pagamento, **qualquer representação monetária deve
+seguir rigorosamente as regras abaixo**:
 
-1. **Nunca use `double` ou `float`**: A representação binária IEEE 754 introduz erros cumulativos de arredondamento inaceitáveis para dinheiro (ex: `0.1 + 0.2 != 0.3`).
+1. **Nunca use `double` ou `float`**: A representação binária IEEE 754 introduz erros cumulativos de arredondamento
+   inaceitáveis para dinheiro (ex: `0.1 + 0.2 != 0.3`).
 2. **Sempre use `BigDecimal` com escala explícita de 6 casas decimais e `RoundingMode.HALF_EVEN`**:
-   - Chame `.setScale(6, RoundingMode.HALF_EVEN)` em cada operação aritmética (`add`, `subtract`, `multiply`, `divide`).
-   - O arredondamento bancário (`HALF_EVEN`) minimiza o viés estatístico de acumulação de sobras em grandes volumes de transações.
+    - Chame `.setScale(6, RoundingMode.HALF_EVEN)` em cada operação aritmética (`add`, `subtract`, `multiply`,
+      `divide`).
+    - O arredondamento bancário (`HALF_EVEN`) minimiza o viés estatístico de acumulação de sobras em grandes volumes de
+      transações.
 3. **Proibido o uso de `MathContext` para controle de casas decimais**:
-   - `MathContext(precision, RoundingMode)` controla **dígitos significativos totais**, não casas decimais. Aplicar `new MathContext(6, RoundingMode.HALF_EVEN)` em `2.000000 + 0.500000` arredonda para `2.50000` (5 casas decimais), truncando silenciosamente a precisão exigida.
+    - `MathContext(precision, RoundingMode)` controla **dígitos significativos totais**, não casas decimais. Aplicar
+      `new MathContext(6, RoundingMode.HALF_EVEN)` em `2.000000 + 0.500000` arredonda para `2.50000` (5 casas decimais),
+      truncando silenciosamente a precisão exigida.
 4. **Encapsulamento em Tipo de Valor Imutável**:
-   - Combine o valor e a moeda em um tipo de valor imutável com validação fail-fast no construtor.
+    - Combine o valor e a moeda em um tipo de valor imutável com validação fail-fast no construtor.
 5. **Concorrência Segura em Saldo**:
-   - Entidades que persistem saldos sujeitos a concorrência devem utilizar controle de concorrência otimista (`@Version`) e retentativas com backoff e jitter na camada de serviço. Para detalhes, consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+    - Entidades que persistem saldos sujeitos a concorrência devem utilizar controle de concorrência otimista
+      (`@Version`) e retentativas com backoff e jitter na camada de serviço. Para detalhes,
+      consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 
 ### Implementação Canônica do Tipo `Money`
 
@@ -213,8 +231,11 @@ data class Money(
 
 ### 1. Builder
 
-- **Princípio SOLID Promovido**: **SRP** (isola a lógica de validação e construção da representação de domínio) e **DIP** (o cliente não se acopla a construtores com muitos parâmetros).
-- **Quando usar**: Construção de objetos com múltiplos campos opcionais, objetos compostos ou validações complexas consolidadas entre múltiplos campos. Para estruturas planas simples com parâmetros obrigatórios, prefira `record` com canonical constructor em Java ou `data class` em Kotlin.
+- **Princípio SOLID Promovido**: **SRP** (isola a lógica de validação e construção da representação de domínio) e
+  **DIP** (o cliente não se acopla a construtores com muitos parâmetros).
+- **Quando usar**: Construção de objetos com múltiplos campos opcionais, objetos compostos ou validações complexas
+  consolidadas entre múltiplos campos. Para estruturas planas simples com parâmetros obrigatórios, prefira `record` com
+  canonical constructor em Java ou `data class` em Kotlin.
 
 #### Java 25 (Fluent Immutable Builder com Validação no `build()`)
 
@@ -293,7 +314,8 @@ public final class CustomerProfile {
 
 #### Kotlin 2.4+ (Argumentos Nomeados vs DSL Builder com `@DslMarker`)
 
-Para dados com parâmetros opcionais, Kotlin torna o padrão Builder clássico redundante através de **argumentos nomeados com valores padrão**:
+Para dados com parâmetros opcionais, Kotlin torna o padrão Builder clássico redundante através de **argumentos nomeados
+com valores padrão**:
 
 ```kotlin
 // Abordagem direta para 90% dos casos de uso de dados
@@ -320,7 +342,8 @@ val customer = CustomerProfile(
 )
 ```
 
-Quando se constrói uma **estrutura hierárquica aninhada complexa** (ex: montagem de pedido com itens, cupons e regras de entrega), utilizamos um **DSL Builder tipado** com `@DslMarker`:
+Quando se constrói uma **estrutura hierárquica aninhada complexa** (ex: montagem de pedido com itens, cupons e regras de
+entrega), utilizamos um **DSL Builder tipado** com `@DslMarker`:
 
 ```kotlin
 package com.example.patterns.builder
@@ -392,8 +415,11 @@ val newOrder = order {
 
 ### 2. Factory Method
 
-- **Princípio SOLID Promovido**: **DIP** (o cliente depende da interface abstrata ou sealed interface, nunca das classes concretas), **SRP** (centraliza o conhecimento de instanciação) e **OCP** (novos tipos de produto são adicionados sem alterar a interface pública).
-- **Quando usar**: Criação polimórfica de objetos onde o tipo exato a ser instanciado depende de configurações, parâmetros ou regras de negócio.
+- **Princípio SOLID Promovido**: **DIP** (o cliente depende da interface abstrata ou sealed interface, nunca das classes
+  concretas), **SRP** (centraliza o conhecimento de instanciação) e **OCP** (novos tipos de produto são adicionados sem
+  alterar a interface pública).
+- **Quando usar**: Criação polimórfica de objetos onde o tipo exato a ser instanciado depende de configurações,
+  parâmetros ou regras de negócio.
 
 #### Java 25 (Static Factories em `record`/`sealed interface` com Switch Pattern Matching)
 
@@ -491,7 +517,8 @@ data class PushChannel(val firebaseAppId: String) : NotificationChannel {
 
 #### Integração no Spring Boot 4.1.1+ (Injeção de Mapa de Beans)
 
-No Spring Boot, o Factory Method é frequentemente implementado por injeção automática de um mapa de componentes gerenciados (`Map<String, T>`):
+No Spring Boot, o Factory Method é frequentemente implementado por injeção automática de um mapa de componentes
+gerenciados (`Map<String, T>`):
 
 ```java
 @Component
@@ -533,9 +560,14 @@ class PaymentGatewayFactory(gatewayList: List<PaymentGateway>) {
 
 ### 3. Singleton
 
-- **Princípio SOLID Promovido**: **SRP** (alerta: singletons clássicos facilmente acumulam responsabilidades e se tornam "God Objects". Use com parcimônia).
-- **Quando usar**: Coordenação de acesso a recursos sem estado (ex: políticas de cálculo imutáveis) ou componentes de infraestrutura gerenciados pelo container IoC.
-- **Atenção Crítica**: **Nunca** use singleton para encapsular conexões de banco de dados (`java.sql.Connection`) ou estados mutáveis compartilhados. Em ambientes com Java 25 Virtual Threads, singletons compartilhados com blocos `synchronized` causam *thread pinning* no carrier thread do Loom. Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+- **Princípio SOLID Promovido**: **SRP** (alerta: singletons clássicos facilmente acumulam responsabilidades e se tornam
+  "God Objects". Use com parcimônia).
+- **Quando usar**: Coordenação de acesso a recursos sem estado (ex: políticas de cálculo imutáveis) ou componentes de
+  infraestrutura gerenciados pelo container IoC.
+- **Atenção Crítica**: **Nunca** use singleton para encapsular conexões de banco de dados (`java.sql.Connection`) ou
+  estados mutáveis compartilhados. Em ambientes com Java 25 Virtual Threads, singletons compartilhados com blocos
+  `synchronized` causam *thread pinning* no carrier thread do Loom.
+  Consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 
 #### Java 25 (Spring Managed Singleton vs Enum Thread-Safe)
 
@@ -613,12 +645,15 @@ class AccountBalanceQueryService(private val dataSource: DataSource) {
 
 ### 4. Strategy
 
-- **Princípio SOLID Promovido**: **OCP** (novos comportamentos são adicionados como novas estratégias sem tocar no código cliente) e **SRP** (cada algoritmo fica restrito à sua própria classe ou função).
-- **Quando usar**: Seleção de algoritmos intercambiáveis em tempo de execução (métodos de pagamento, políticas de frete, estratégias de precificação/desconto).
+- **Princípio SOLID Promovido**: **OCP** (novos comportamentos são adicionados como novas estratégias sem tocar no
+  código cliente) e **SRP** (cada algoritmo fica restrito à sua própria classe ou função).
+- **Quando usar**: Seleção de algoritmos intercambiáveis em tempo de execução (métodos de pagamento, políticas de frete,
+  estratégias de precificação/desconto).
 
 #### Java 25 (`sealed interface` com Injeção de Contexto ou `@FunctionalInterface`)
 
-Para regras com operações de rede, timeouts e idempotência, utilize `sealed interface` com registros dedicados. Para algoritmos de cálculo puros, use `@FunctionalInterface`:
+Para regras com operações de rede, timeouts e idempotência, utilize `sealed interface` com registros dedicados. Para
+algoritmos de cálculo puros, use `@FunctionalInterface`:
 
 ```java
 package com.example.patterns.strategy;
@@ -707,12 +742,15 @@ sealed interface PaymentStrategy {
 
 ### 5. Observer
 
-- **Princípio SOLID Promovido**: **OCP** (novos observadores se conectam aos eventos sem alterar o publicador) e **SRP** (o fluxo principal não cuida do envio de emails, auditoria ou redução de estoque).
+- **Princípio SOLID Promovido**: **OCP** (novos observadores se conectam aos eventos sem alterar o publicador) e **SRP**
+  (o fluxo principal não cuida do envio de emails, auditoria ou redução de estoque).
 - **Quando usar**: Propagação de eventos de domínio e desacoplamento de efeitos colaterais pós-transação.
 
 #### Java 25 (Spring Boot 4.1.1+ `ApplicationEventPublisher` e Transações)
 
-Eventos de domínio devem ser publicados como `record` imutável. Para efeitos colaterais externos, use `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` para evitar que falhas no listener causem rollback indevido da transação de negócio principal:
+Eventos de domínio devem ser publicados como `record` imutável. Para efeitos colaterais externos, use
+`@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` para evitar que falhas no listener causem rollback
+indevido da transação de negócio principal:
 
 ```java
 package com.example.patterns.observer;
@@ -791,7 +829,8 @@ class Account(initialBalance: Money) {
 }
 ```
 
-Para eventos a nível de arquitetura de microsserviços e Spring Boot, Kotlin usa a infraestrutura de eventos do Spring de forma idiomática:
+Para eventos a nível de arquitetura de microsserviços e Spring Boot, Kotlin usa a infraestrutura de eventos do Spring de
+forma idiomática:
 
 ```kotlin
 data class OrderPlacedEvent(
@@ -816,8 +855,11 @@ class OrderEventListener {
 
 ### 6. Template Method
 
-- **Princípio SOLID Promovido**: **OCP** (estrutura fixa com passos flexíveis) e **DIP** (inversão do controle de execução — *Hollywood Principle: "Don't call us, we'll call you"*).
-- **Quando usar**: Processamentos com etapas fixas e ordenadas onde implementações específicas variam apenas detalhes de leitura, transformação ou persistência. Em linguagens modernas, **prefira composição via Higher-Order Functions sobre herança**.
+- **Princípio SOLID Promovido**: **OCP** (estrutura fixa com passos flexíveis) e **DIP** (inversão do controle de
+  execução — *Hollywood Principle: "Don't call us, we'll call you"*).
+- **Quando usar**: Processamentos com etapas fixas e ordenadas onde implementações específicas variam apenas detalhes de
+  leitura, transformação ou persistência. Em linguagens modernas, **prefira composição via Higher-Order Functions sobre
+  herança**.
 
 #### Java 25 (Classe Abstrata com Método Template `final` e Hooks Protegidos)
 
@@ -871,7 +913,8 @@ public final class DailyBankingReportPipeline extends FinancialReportPipeline {
 
 #### Kotlin 2.4+ (Higher-Order Functions: Preferindo Composição sobre Herança)
 
-Em Kotlin, o padrão Template Method é substituído com elegância por **funções de ordem superior inline com trailing lambdas**, eliminando acoplamento estrutural de subclasses:
+Em Kotlin, o padrão Template Method é substituído com elegância por **funções de ordem superior inline com trailing
+lambdas**, eliminando acoplamento estrutural de subclasses:
 
 ```kotlin
 package com.example.patterns.templatemethod
@@ -910,8 +953,10 @@ fun executeDailyJob() {
 
 ### 7. Decorator
 
-- **Princípio SOLID Promovido**: **OCP** (adiciona comportamentos dinamicamente sem alterar a classe decorada) e **SRP** (divide responsabilidades auxiliares em decoradores atômicos e independentes).
-- **Quando usar**: Adição de camadas transversais como medição de latência, cálculo de taxas adicionais em preços, caching ou auditoria de operações.
+- **Princípio SOLID Promovido**: **OCP** (adiciona comportamentos dinamicamente sem alterar a classe decorada) e **SRP**
+  (divide responsabilidades auxiliares em decoradores atômicos e independentes).
+- **Quando usar**: Adição de camadas transversais como medição de latência, cálculo de taxas adicionais em preços,
+  caching ou auditoria de operações.
 
 #### Java 25 (Composição de Interfaces com Delegação Explícita)
 
@@ -960,7 +1005,9 @@ public class InternationalTransferDecorator extends TransferDecorator {
 
 #### Kotlin 2.4+ (Class Delegation Nativa via Palavra-Chave `by`)
 
-Kotlin oferece suporte de primeira classe ao padrão Decorator através da delegação de classes com a keyword `by`. O compilador gera automaticamente todo o código de repasse para a instância delegada, permitindo que a classe decoradora sobrescreva apenas os métodos necessários:
+Kotlin oferece suporte de primeira classe ao padrão Decorator através da delegação de classes com a keyword `by`. O
+compilador gera automaticamente todo o código de repasse para a instância delegada, permitindo que a classe decoradora
+sobrescreva apenas os métodos necessários:
 
 ```kotlin
 package com.example.patterns.decorator
@@ -1000,8 +1047,11 @@ val service: TransferService = InternationalTransferDecorator(
 
 ### 8. Adapter
 
-- **Princípio SOLID Promovido**: **LSP** (o adaptador se faz passar pela interface esperada pelo consumidor sem efeitos colaterais), **ISP** (oferece apenas os métodos relevantes para o cliente) e **DIP** (o consumidor depende da interface alvo desacoplada de fornecedores terceiros).
-- **Quando usar**: Integração entre interfaces incompatíveis, adaptação de SDKs legados ou tradução de modelos de transporte (DTOs externos) para o modelo de domínio interno.
+- **Princípio SOLID Promovido**: **LSP** (o adaptador se faz passar pela interface esperada pelo consumidor sem efeitos
+  colaterais), **ISP** (oferece apenas os métodos relevantes para o cliente) e **DIP** (o consumidor depende da
+  interface alvo desacoplada de fornecedores terceiros).
+- **Quando usar**: Integração entre interfaces incompatíveis, adaptação de SDKs legados ou tradução de modelos de
+  transporte (DTOs externos) para o modelo de domínio interno.
 
 #### Java 25 (Wrapper Adapter Clássico com Injeção de Dependências)
 
@@ -1052,7 +1102,8 @@ public class LegacySdkPaymentAdapter implements PaymentProviderGateway {
 
 #### Kotlin 2.4+ (Extension Functions para Mapeamento e Object Adapter)
 
-Em Kotlin, adaptações puramente estruturais de dados (como conversores de DTO para Domínio) são implementadas com **funções de extensão**:
+Em Kotlin, adaptações puramente estruturais de dados (como conversores de DTO para Domínio) são implementadas com
+**funções de extensão**:
 
 ```kotlin
 package com.example.patterns.adapter
@@ -1102,25 +1153,30 @@ class SyslogAdapter(private val legacySyslog: LegacySyslogService) : ModernAudit
 ## Anti-Patterns e Cuidados ("Patternitis")
 
 > [!WARNING]
-> **Alerta de Patternitis (Sobre-engenharia)**: Não introduza padrões de projeto prematuramente. A arquitetura mais elegante é sempre a mais simples que atende aos requisitos atuais com clareza. Siga os princípios **KISS** (*Keep It Simple, Stupid*) e **YAGNI** (*You Aren't Gonna Need It*), documentados em [clean-code](../clean-code/SKILL.md).
+> **Alerta de Patternitis (Sobre-engenharia)**: Não introduza padrões de projeto prematuramente. A arquitetura mais
+elegante é sempre a mais simples que atende aos requisitos atuais com clareza. Siga os princípios **KISS** (*Keep It
+Simple, Stupid*) e **YAGNI** (*You Aren't Gonna Need It*), documentados em [clean-code](../clean-code/SKILL.md).
 
-| Anti-Pattern | Problema | Abordagem Recomendada |
-|---|---|---|
-| **Singleton Abuse** | Estado mutável global, dificuldade de testes unitários e acoplamento oculto | Injeção de dependências gerenciada pelo Spring Boot |
-| **Singleton com `Connection` JDBC** | Conexão compartilhada corrompe estado em concorrência e quebra pools | Injetar `DataSource` com pool HikariCP; obter conexões sob demanda |
-| **Factory Everywhere** | Criação de factories para classes que nunca terão variantes polimórficas | Uso direto do construtor ou `record` compacto se o tipo for único |
-| **Deep Decorator Chains** | Dificuldade de rastreamento de stack traces e ordens de execução imprevisíveis | Limitar profundidade de decoradores; considerar pipeline explícito |
-| **Strategy para Funções Triviais** | Criar classes de estratégia inteiras para uma simples linha de cálculo | Usar lambdas (`(T) -> R`) ou métodos puros estáticos |
-| **Observer com Transação Mista** | Falha em listener secundário dispara rollback indevido no caso de uso | `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` |
-| **Thread Pinning com Virtual Threads** | Uso de `synchronized` em Singletons ou Decorators trava carrier threads | Substituir por `ReentrantLock` ou estruturas imutáveis e lock-free |
-| **`MathContext` em Dinheiro** | Limita algarismos significativos e quebra casas decimais silenciosamente | `BigDecimal.setScale(6, RoundingMode.HALF_EVEN)` em toda operação |
+| Anti-Pattern                           | Problema                                                                       | Abordagem Recomendada                                                |
+|----------------------------------------|--------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| **Singleton Abuse**                    | Estado mutável global, dificuldade de testes unitários e acoplamento oculto    | Injeção de dependências gerenciada pelo Spring Boot                  |
+| **Singleton com `Connection` JDBC**    | Conexão compartilhada corrompe estado em concorrência e quebra pools           | Injetar `DataSource` com pool HikariCP; obter conexões sob demanda   |
+| **Factory Everywhere**                 | Criação de factories para classes que nunca terão variantes polimórficas       | Uso direto do construtor ou `record` compacto se o tipo for único    |
+| **Deep Decorator Chains**              | Dificuldade de rastreamento de stack traces e ordens de execução imprevisíveis | Limitar profundidade de decoradores; considerar pipeline explícito   |
+| **Strategy para Funções Triviais**     | Criar classes de estratégia inteiras para uma simples linha de cálculo         | Usar lambdas (`(T) -> R`) ou métodos puros estáticos                 |
+| **Observer com Transação Mista**       | Falha em listener secundário dispara rollback indevido no caso de uso          | `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` |
+| **Thread Pinning com Virtual Threads** | Uso de `synchronized` em Singletons ou Decorators trava carrier threads        | Substituir por `ReentrantLock` ou estruturas imutáveis e lock-free   |
+| **`MathContext` em Dinheiro**          | Limita algarismos significativos e quebra casas decimais silenciosamente       | `BigDecimal.setScale(6, RoundingMode.HALF_EVEN)` em toda operação    |
 
-Para orientações detalhadas sobre concorrência segura com Virtual Threads e prevenção de bloqueios na JVM, consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
+Para orientações detalhadas sobre concorrência segura com Virtual Threads e prevenção de bloqueios na JVM,
+consulte [concurrency-java21-review](../concurrency-java21-review/SKILL.md).
 
 ---
 
 ## Habilidades Relacionadas
 
-- [solid-principles](../solid-principles/SKILL.md) — Princípios de design orientado a objetos que os padrões materializam.
+- [solid-principles](../solid-principles/SKILL.md) — Princípios de design orientado a objetos que os padrões
+  materializam.
 - [clean-code](../clean-code/SKILL.md) — Boas práticas de legibilidade, funções limpas e prevenção de sobre-engenharia.
-- [concurrency-java21-review](../concurrency-java21-review/SKILL.md) — Concorrência segura, Virtual Threads (Project Loom) e prevenção de thread pinning em padrões de projeto.
+- [concurrency-java21-review](../concurrency-java21-review/SKILL.md) — Concorrência segura, Virtual Threads (Project
+  Loom) e prevenção de thread pinning em padrões de projeto.

@@ -8,19 +8,27 @@ Load for races, visibility, deadlocks, DCL, explicit locks, concurrent collectio
 
 ```java
 // ❌ Non-atomic compound check-then-act
-if (!map.containsKey(key)) {
-    map.put(key, computeValue());
-}
+if(!map.containsKey(key)){
+        map.
+
+put(key, computeValue());
+        }
 
 // ✅ Atomic
-map.computeIfAbsent(key, k -> computeValue());
+        map.
+
+computeIfAbsent(key, k ->
+
+computeValue());
 
 // ❌ Non-atomic counter gate
-if (count < MAX) { count++; }
+        if(count<MAX){count++;}
 
 // ✅ Atomic update
 AtomicInteger count = new AtomicInteger();
-count.updateAndGet(c -> c < MAX ? c + 1 : c);
+count.
+
+updateAndGet(c ->c<MAX ?c +1:c);
 ```
 
 ---
@@ -35,12 +43,14 @@ private boolean ready; // non-volatile
 private int data;
 
 // Producer
-data = 42;
-ready = true;
+data =42;
+ready =true;
 
 // Consumer
-if (ready) {
-    System.out.println(data); // on ARM64, ready may be true while data still reads 0
+        if(ready){
+        System.out.
+
+println(data); // on ARM64, ready may be true while data still reads 0
 }
 
 // ✅ volatile creates a happens-before relationship on every architecture
@@ -60,11 +70,17 @@ not guaranteed atomic by the JMM.
 ```java
 // ❌
 private long counter;
-public void increment() { counter++; }
+
+public void increment() {
+    counter++;
+}
 
 // ✅
 private final AtomicLong counter = new AtomicLong();
-public void increment() { counter.incrementAndGet(); }
+
+public void increment() {
+    counter.incrementAndGet();
+}
 ```
 
 ---
@@ -77,8 +93,14 @@ private final AtomicLong totalRequests = new AtomicLong();
 
 // ✅ LongAdder spreads updates across cells
 private final LongAdder totalRequests = new LongAdder();
-public void recordRequest() { totalRequests.increment(); }
-public long total()          { return totalRequests.sum(); }
+
+public void recordRequest() {
+    totalRequests.increment();
+}
+
+public long total() {
+    return totalRequests.sum();
+}
 ```
 
 > For statistics, metrics and throughput counters where reads are far rarer than writes (Evans et al., Ch. 13).
@@ -115,7 +137,10 @@ public class RingBuffer {
 private static class Holder {
     static final Singleton INSTANCE = new Singleton();
 }
-public static Singleton getInstance() { return Holder.INSTANCE; }
+
+public static Singleton getInstance() {
+    return Holder.INSTANCE;
+}
 
 // If DCL is unavoidable, the field MUST be volatile
 private static volatile Singleton instance;
@@ -168,16 +193,22 @@ public class ServerWorker implements Runnable {
 
 ```java
 // ❌ busy wait for long or unknown durations — burns a core, starves carriers
-while (!condition) { }
+while(!condition){}
 
 // ✅ spin hint for ultra-short, bounded waits
-while (!lock.compareAndSet(false, true)) {
-    Thread.onSpinWait();
+        while(!lock.
+
+compareAndSet(false,true)){
+        Thread.
+
+onSpinWait();
 }
 
 // ✅ parking for unknown or longer waits — always in a loop (park can return spuriously)
-while (!condition) {
-    LockSupport.park(this);
+        while(!condition){
+        LockSupport.
+
+park(this);
 }
 ```
 
@@ -191,29 +222,44 @@ while (!condition) {
 
 ```java
 // ❌ lock() inside try — if lock() throws, unlock() runs without ownership
-try {
-    lock.lock();
-    process();
-} finally {
-    lock.unlock();
+try{
+        lock.lock();
+
+process();
+}finally{
+        lock.
+
+unlock();
 }
 
 // ✅ lock() BEFORE try; unlock() ONLY in finally
-lock.lock();
-try {
-    process();
-} finally {
-    lock.unlock();
+        lock.
+
+lock();
+try{
+
+process();
+}finally{
+        lock.
+
+unlock();
 }
 
 // ✅ Bounded wait
-if (!lock.tryLock(5, TimeUnit.SECONDS)) {   // method must declare InterruptedException
-    throw new LockAcquisitionException("Could not acquire lock within timeout"); // unchecked, domain-specific
+        if(!lock.
+
+tryLock(5,TimeUnit.SECONDS)){   // method must declare InterruptedException
+        throw new
+
+LockAcquisitionException("Could not acquire lock within timeout"); // unchecked, domain-specific
 }
-try {
-    process();
-} finally {
-    lock.unlock();
+        try{
+
+process();
+}finally{
+        lock.
+
+unlock();
 }
 ```
 
@@ -228,14 +274,14 @@ Never hold a lock while calling network, database, broker or unknown callback co
 
 ```java
 // ❌ inconsistent acquisition order
-synchronized (from) { synchronized (to) { /* transfer */ } }
+synchronized (from){synchronized (to){ /* transfer */ }}
 
 // ✅ total ordering by stable ID
-Account first  = from.getId() < to.getId() ? from : to;
+Account first = from.getId() < to.getId() ? from : to;
 Account second = from.getId() < to.getId() ? to : from;
-synchronized (first) {
-    synchronized (second) { /* transfer */ }
-}
+synchronized (first){
+synchronized (second){ /* transfer */ }
+        }
 ```
 
 In-memory transfer locking is illustrative only — money still requires database-level concurrency control
@@ -247,14 +293,24 @@ In-memory transfer locking is illustrative only — money still requires databas
 
 ```java
 // ❌ Swallowing
-try { Thread.sleep(1000); } catch (InterruptedException e) { }
+try{Thread.sleep(1000); }catch(
+InterruptedException e){}
 
 // ✅ Restore then handle
-try {
-    Thread.sleep(1000);
-} catch (InterruptedException e) {
-    Thread.currentThread().interrupt();
-    throw new ServiceException("Interrupted", e);
+        try{
+        Thread.
+
+sleep(1000);
+}catch(
+InterruptedException e){
+        Thread.
+
+currentThread().
+
+interrupt();
+    throw new
+
+ServiceException("Interrupted",e);
 }
 
 // ✅ Propagate when the signature allows (cleanest)
@@ -269,12 +325,12 @@ public void process() throws InterruptedException {
 
 ## 12. Thread-Safe Collections
 
-| Use Case                        | Wrong        | Right                    |
-|---------------------------------|--------------|--------------------------|
-| Concurrent map                  | `HashMap`    | `ConcurrentHashMap`      |
-| Rare writes, lots of iteration  | CHM          | `CopyOnWriteArrayList`   |
-| Producer-consumer               | `ArrayList`  | `BlockingQueue` (bounded)|
-| Sorted concurrent map           | `TreeMap`    | `ConcurrentSkipListMap`  |
+| Use Case                       | Wrong       | Right                     |
+|--------------------------------|-------------|---------------------------|
+| Concurrent map                 | `HashMap`   | `ConcurrentHashMap`       |
+| Rare writes, lots of iteration | CHM         | `CopyOnWriteArrayList`    |
+| Producer-consumer              | `ArrayList` | `BlockingQueue` (bounded) |
+| Sorted concurrent map          | `TreeMap`   | `ConcurrentSkipListMap`   |
 
 ---
 
@@ -282,15 +338,29 @@ public void process() throws InterruptedException {
 
 ```java
 // ❌ compound non-atomic
-if (!map.containsKey(key)) map.put(key, value);
+if(!map.containsKey(key))map.
+
+put(key, value);
 
 // ✅ atomic
-map.putIfAbsent(key, value);
-map.computeIfAbsent(key, k -> createValue());
-map.merge(key, newValue, mergeFn);
+map.
+
+putIfAbsent(key, value);
+map.
+
+computeIfAbsent(key, k ->
+
+createValue());
+        map.
+
+merge(key, newValue, mergeFn);
 
 // ❌ nested compute — non-atomic state, reentrancy risk, possible deadlock. PROHIBITED.
-map.compute(key1, (k, v) -> map.compute(key2, ...));
+map.
+
+compute(key1, (k, v) ->map.
+
+compute(key2, ...));
 ```
 
 Keep mapping functions short and side-effect free: they run while holding a bin lock. Never perform I/O inside them.
@@ -304,7 +374,9 @@ Keep mapping functions short and side-effect free: they run while holding a bin 
 ```java
 // ❌ value may be removed between get() and use
 Object value = cache.get(key);
-if (value != null) { process(value); }
+if(value !=null){
+
+process(value); }
 
 // ✅ atomic get-or-create
 Object value = cache.computeIfAbsent(key, this::loadFromSource);

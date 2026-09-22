@@ -5,13 +5,15 @@ description: Princípios de Clean Code (DRY, KISS, YAGNI), convenções de nomen
 
 # Clean Code Skill
 
-Escreva código legível, expressivo, manutenível e idiomático para a plataforma JVM moderna, abrangendo **Java 25 LTS** e **Kotlin 2.4+**.
+Escreva código legível, expressivo, manutenível e idiomático para a plataforma JVM moderna, abrangendo **Java 25 LTS** e
+**Kotlin 2.4+**.
 
 ---
 
 ## Quando Usar
 
-- Solicitações como: "limpe este código", "refatore este método", "melhore a legibilidade", "esta função está muito complexa".
+- Solicitações como: "limpe este código", "refatore este método", "melhore a legibilidade", "esta função está muito
+  complexa".
 - Revisões de código com foco em simplicidade, manutenibilidade e eliminação de code smells.
 - Redução de complexidade ciclomática e aninhamentos desnecessários.
 - Padronização de nomenclatura, imutabilidade e eliminação de Primitive Obsession.
@@ -21,10 +23,10 @@ Escreva código legível, expressivo, manutenível e idiomático para a platafor
 
 ## Princípios Fundamentais
 
-| Princípio | Significado | Sintoma de Violação | Ação de Refatoração |
-|---|---|---|---|
-| **DRY** | *Don't Repeat Yourself* | Blocos de lógica duplicados ou regras de domínio espalhadas | Encapsular regra única em Record/Value Class ou método utilitário |
-| **KISS** | *Keep It Simple, Stupid* | Soluções super-engenheiradas, cadeias funcionais convolutas | Simplificar fluxo, usar biblioteca padrão e construções diretas |
+| Princípio | Significado                | Sintoma de Violação                                          | Ação de Refatoração                                               |
+|-----------|----------------------------|--------------------------------------------------------------|-------------------------------------------------------------------|
+| **DRY**   | *Don't Repeat Yourself*    | Blocos de lógica duplicados ou regras de domínio espalhadas  | Encapsular regra única em Record/Value Class ou método utilitário |
+| **KISS**  | *Keep It Simple, Stupid*   | Soluções super-engenheiradas, cadeias funcionais convolutas  | Simplificar fluxo, usar biblioteca padrão e construções diretas   |
 | **YAGNI** | *You Aren't Gonna Need It* | Interfaces gigantes especulativas, parâmetros "just in case" | Deletar código morto, modelar apenas o necessário para o presente |
 
 ---
@@ -33,7 +35,8 @@ Escreva código legível, expressivo, manutenível e idiomático para a platafor
 
 > *"Toda peça de conhecimento deve ter uma representação única, não ambígua e autoritativa no sistema."*
 
-DRY não é apenas sobre duplicação literal de linhas de texto; é sobre **duplicação de conhecimento e regras de negócio**.
+DRY não é apenas sobre duplicação literal de linhas de texto; é sobre **duplicação de conhecimento e regras de
+negócio**.
 
 ### Violação (Java & Kotlin)
 
@@ -66,7 +69,8 @@ public class UserController {
 
 ### Refatorado em Java 25
 
-Encapsular a regra de negócio em um `record` imutável com **compact constructor** e **guard clauses**. O tipo passa a ser auto-validável e a regra tem fonte única da verdade:
+Encapsular a regra de negócio em um `record` imutável com **compact constructor** e **guard clauses**. O tipo passa a
+ser auto-validável e a regra tem fonte única da verdade:
 
 ```java
 // ✅ GOOD (Java 25): Record com compact constructor garante unicidade da regra
@@ -98,7 +102,8 @@ public class UserController {
 
 ### Refatorado em Kotlin 2.4+
 
-Usar `@JvmInline value class` para validação com **zero overhead** de alocação no heap, ou funções de extensão dedicadas:
+Usar `@JvmInline value class` para validação com **zero overhead** de alocação no heap, ou funções de extensão
+dedicadas:
 
 ```kotlin
 // ✅ GOOD (Kotlin 2.4): Value class imutável com validação fail-fast
@@ -129,7 +134,8 @@ class UserController(private val userService: UserService) {
 
 ### Exceções ao DRY: Duplicação Acidental vs Duplicação Real
 
-Evite a armadilha da "abstração prematura". Se dois trechos de código possuem estrutura similar hoje, mas mudam por razões de negócio distintas, **não os unifique**:
+Evite a armadilha da "abstração prematura". Se dois trechos de código possuem estrutura similar hoje, mas mudam por
+razões de negócio distintas, **não os unifique**:
 
 ```java
 // Duplicação aparente, mas com motivações de mudança distintas - MANTENHA SEPARADO:
@@ -149,7 +155,8 @@ public BigDecimal calculateInsuranceFee(Order order) {
 
 > *"A solução mais simples que resolve o problema com clareza é a melhor."*
 
-Evite complexidade desnecessária gerada por excesso de abstração, construções funcionais labirínticas ou cadeias obscuras de escopo.
+Evite complexidade desnecessária gerada por excesso de abstração, construções funcionais labirínticas ou cadeias
+obscuras de escopo.
 
 ### Violação (Java & Kotlin)
 
@@ -202,7 +209,8 @@ fun processUser(user: User?): String {
 ### Checklist KISS
 
 - [ ] Um desenvolvedor júnior compreende o fluxo em 30 segundos?
-- [ ] Existe um método na standard library do Java 25 (`String.isBlank()`, `Objects.requireNonNull()`, `List.copyOf()`) ou Kotlin (`isNullOrBlank()`, `orEmpty()`) que elimina essa lógica personalizada?
+- [ ] Existe um método na standard library do Java 25 (`String.isBlank()`, `Objects.requireNonNull()`, `List.copyOf()`)
+  ou Kotlin (`isNullOrBlank()`, `orEmpty()`) que elimina essa lógica personalizada?
 - [ ] Estou adicionando uma camada genérica para um caso de uso que só existe uma vez?
 
 ---
@@ -248,16 +256,16 @@ public interface UserRepository {
 
 ### Tabela Canônica de Nomenclatura (JVM)
 
-| Elemento | Convenção | Java 25 | Kotlin 2.4+ |
-|---|---|---|---|
-| **Classe / Interface** | `PascalCase`, substantivo/adjetivo | `OrderService`, `Auditable` | `OrderService`, `Auditable` |
-| **Record / Data Class** | `PascalCase`, substantivo imutável | `record CustomerProfile(...)` | `data class CustomerProfile(...)` |
-| **Value Class** | `PascalCase`, tipo de domínio | N/A (`record` no Java) | `value class AccountId(val id: UUID)` |
-| **Método / Função** | `camelCase`, verbo + substantivo | `processPayment()`, `findActive()` | `processPayment()`, `findActive()` |
-| **Variável / Propriedade** | `camelCase`, substantivo específico | `orderAmount`, `timeoutSeconds` | `orderAmount`, `timeoutSeconds` |
-| **Constante / Enum** | `UPPER_SNAKE_CASE` | `MAX_RETRY_ATTEMPTS` | `const val MAX_RETRY_ATTEMPTS = 3` |
-| **Enum Type** | `PascalCase` singular | `enum PaymentStatus { PENDING }` | `enum class PaymentStatus { PENDING }` |
-| **Pacote (Package)** | `lowercase` unificado | `com.example.billing.domain` | `com.example.billing.domain` |
+| Elemento                   | Convenção                           | Java 25                            | Kotlin 2.4+                            |
+|----------------------------|-------------------------------------|------------------------------------|----------------------------------------|
+| **Classe / Interface**     | `PascalCase`, substantivo/adjetivo  | `OrderService`, `Auditable`        | `OrderService`, `Auditable`            |
+| **Record / Data Class**    | `PascalCase`, substantivo imutável  | `record CustomerProfile(...)`      | `data class CustomerProfile(...)`      |
+| **Value Class**            | `PascalCase`, tipo de domínio       | N/A (`record` no Java)             | `value class AccountId(val id: UUID)`  |
+| **Método / Função**        | `camelCase`, verbo + substantivo    | `processPayment()`, `findActive()` | `processPayment()`, `findActive()`     |
+| **Variável / Propriedade** | `camelCase`, substantivo específico | `orderAmount`, `timeoutSeconds`    | `orderAmount`, `timeoutSeconds`        |
+| **Constante / Enum**       | `UPPER_SNAKE_CASE`                  | `MAX_RETRY_ATTEMPTS`               | `const val MAX_RETRY_ATTEMPTS = 3`     |
+| **Enum Type**              | `PascalCase` singular               | `enum PaymentStatus { PENDING }`   | `enum class PaymentStatus { PENDING }` |
+| **Pacote (Package)**       | `lowercase` unificado               | `com.example.billing.domain`       | `com.example.billing.domain`           |
 
 ### Booleans: Nomes Afirmativos e Intencionais
 
@@ -298,11 +306,13 @@ User findByTaxId(TaxId taxId);
 
 ### 1. Funções Pequenas e Focadas (Max ~15-20 linhas)
 
-Funções devem fazer apenas uma coisa e fazê-la bem. Se uma função possui seções comentadas para separar etapas, cada seção deve se tornar um método privado.
+Funções devem fazer apenas uma coisa e fazê-la bem. Se uma função possui seções comentadas para separar etapas, cada
+seção deve se tornar um método privado.
 
 ### 2. SLAP - Single Level of Abstraction Principle
 
-Todos os passos dentro de um método devem estar no **mesmo nível de abstração**. Não misture orquestração de alto nível com loops de baixo nível ou manipulação de strings.
+Todos os passos dentro de um método devem estar no **mesmo nível de abstração**. Não misture orquestração de alto nível
+com loops de baixo nível ou manipulação de strings.
 
 ```java
 // ❌ BAD: Mistura orquestração com cálculo aritmético de baixo nível
@@ -334,7 +344,8 @@ private BigDecimal calculateTotal(Order order) {
 
 ### 3. Limite de Parâmetros (Max 3)
 
-Se um método necessita de mais de 3 parâmetros, agrupe-os em um objeto contextual (`record` no Java 25, `data class` no Kotlin 2.4).
+Se um método necessita de mais de 3 parâmetros, agrupe-os em um objeto contextual (`record` no Java 25, `data class` no
+Kotlin 2.4).
 
 ```java
 // ❌ BAD: Excesso de parâmetros primitivos suscetíveis à inversão
@@ -372,7 +383,8 @@ public void exportCsvReport(Report report) {}
 
 ### Proibição de Field Injection (`@Autowired` em Atributos)
 
-A injeção em campos viola o encapsulamento, impede a criação de objetos imutáveis e dificulta testes unitários puros sem subir o contexto do Spring.
+A injeção em campos viola o encapsulamento, impede a criação de objetos imutáveis e dificulta testes unitários puros sem
+subir o contexto do Spring.
 
 ### Java 25: Constructor Injection com Imutabilidade
 
@@ -447,7 +459,8 @@ User user = userRepository.findById(id)
 ### Kotlin 2.4+: Null Safety Nativo e Boas Práticas
 
 - Tire proveito dos tipos `T` (não nulo) e `T?` (anulável) em tempo de compilação.
-- ❌ **EVITE** o operador de asserção `!!` (*not-null assertion*). Trata-se de um code smell que reintroduz `NullPointerException`.
+- ❌ **EVITE** o operador de asserção `!!` (*not-null assertion*). Trata-se de um code smell que reintroduz
+  `NullPointerException`.
 - Use o operador Elvis `?:` com `return` ou `throw` para guard clauses limpas.
 
 ```kotlin
@@ -469,12 +482,12 @@ fun requireActiveUser(user: User?): User {
 
 Use cada função para sua finalidade canônica e evite aninhamentos:
 
-| Função | Context Object | Retorno | Quando Usar |
-|---|---|---|---|
-| `let` | `it` | Resultado do lambda | Executar operações em valores não nulos ou transformar escopo |
-| `apply` | `this` | O próprio objeto | Configuração e inicialização de instâncias |
-| `also` | `it` | O próprio objeto | Efeitos colaterais adicionais (logging, métricas) sem alterar o valor |
-| `run` | `this` | Resultado do lambda | Computação que necessita de escopo específico do objeto |
+| Função  | Context Object | Retorno             | Quando Usar                                                           |
+|---------|----------------|---------------------|-----------------------------------------------------------------------|
+| `let`   | `it`           | Resultado do lambda | Executar operações em valores não nulos ou transformar escopo         |
+| `apply` | `this`         | O próprio objeto    | Configuração e inicialização de instâncias                            |
+| `also`  | `it`           | O próprio objeto    | Efeitos colaterais adicionais (logging, métricas) sem alterar o valor |
+| `run`   | `this`         | Resultado do lambda | Computação que necessita de escopo específico do objeto               |
 
 ```kotlin
 // ✅ GOOD: Uso idiomático das funções de escopo
@@ -525,15 +538,15 @@ if (user.isAdult() && user.hasActiveAccount() && !user.hasCreditRestriction()) {
 
 ## Code Smells Comuns e Técnicas de Refatoração
 
-| Code Smell | Descrição | Sintoma | Solução Canônica |
-|---|---|---|---|
-| **Magic Numbers / Strings** | Literais literais espalhados no código | `if (status == 3)` | Constantes nomeadas ou Enums tipados |
-| **Primitive Obsession** | Uso excessivo de tipos primitivos para conceitos de domínio | `String email, String cpf, Long id` | `record` (Java) ou `value class` (Kotlin) |
-| **Long Parameter List** | Métodos com > 3 argumentos | Métodos com 5+ parâmetros | Parameter Object / Record |
-| **Deep Nesting** | Ninhos profundos de `if/else` | Código em forma de seta (`>`) | Guard Clauses (Retorno Antecipado) |
-| **God Class** | Classes que orquestram centenas de linhas e múltiplas responsabilidades | Arquivos com 500+ linhas | Extrair classes por responsabilidade única |
-| **Dead Code** | Código comentado ou métodos privados inacessíveis | Linhas mortas acumuladas | Deletar imediatamente (o Git mantém o histórico) |
-| **Feature Envy** | Método que acessa mais dados de outra classe do que da própria | `other.getX(), other.getY()` | Mover método para a classe que detém os dados |
+| Code Smell                  | Descrição                                                               | Sintoma                             | Solução Canônica                                 |
+|-----------------------------|-------------------------------------------------------------------------|-------------------------------------|--------------------------------------------------|
+| **Magic Numbers / Strings** | Literais literais espalhados no código                                  | `if (status == 3)`                  | Constantes nomeadas ou Enums tipados             |
+| **Primitive Obsession**     | Uso excessivo de tipos primitivos para conceitos de domínio             | `String email, String cpf, Long id` | `record` (Java) ou `value class` (Kotlin)        |
+| **Long Parameter List**     | Métodos com > 3 argumentos                                              | Métodos com 5+ parâmetros           | Parameter Object / Record                        |
+| **Deep Nesting**            | Ninhos profundos de `if/else`                                           | Código em forma de seta (`>`)       | Guard Clauses (Retorno Antecipado)               |
+| **God Class**               | Classes que orquestram centenas de linhas e múltiplas responsabilidades | Arquivos com 500+ linhas            | Extrair classes por responsabilidade única       |
+| **Dead Code**               | Código comentado ou métodos privados inacessíveis                       | Linhas mortas acumuladas            | Deletar imediatamente (o Git mantém o histórico) |
+| **Feature Envy**            | Método que acessa mais dados de outra classe do que da própria          | `other.getX(), other.getY()`        | Mover método para a classe que detém os dados    |
 
 ### Primitive Obsession: Solução Java 25 vs Kotlin 2.4+
 
@@ -609,7 +622,9 @@ public void processOrder(Order order) {
 
 ### Top-Level Enums vs Nested/Inner Enums
 
-Enums genéricos aninhados dentro de classes (e.g. `public enum Status`) geram poluição no namespace, dificultam a reutilização e causam ambiguidades em imports. Prefira enums top-level com nomes expressivos e serialização resiliente com Jackson 3:
+Enums genéricos aninhados dentro de classes (e.g. `public enum Status`) geram poluição no namespace, dificultam a
+reutilização e causam ambiguidades em imports. Prefira enums top-level com nomes expressivos e serialização resiliente
+com Jackson 3:
 
 ```java
 // ✅ GOOD (Java 25): Enum Top-Level com contrato explícito Jackson 3
@@ -650,7 +665,9 @@ public enum OrderStatus {
 ### Java 25 LTS: Recursos Idiomáticos Modernos
 
 #### 1. Records para Modelos e DTOs Imutáveis
-Elimine classes anêmicas com getters/setters e dependências de anotações externas de geração de código. Records possuem semântica de valor imutável por padrão:
+
+Elimine classes anêmicas com getters/setters e dependências de anotações externas de geração de código. Records possuem
+semântica de valor imutável por padrão:
 
 ```java
 public record CustomerResponse(
@@ -662,6 +679,7 @@ public record CustomerResponse(
 ```
 
 #### 2. Pattern Matching para `switch` com Guard Clauses (`when`)
+
 Elimine cadeias de `instanceof` e casts manuais utilizando switch com padrões de tipo e guard clauses (`when`):
 
 ```java
@@ -688,7 +706,9 @@ public String describePayment(PaymentMethod payment) {
 ```
 
 #### 3. Sequenced Collections (Java 21+)
-Acesse extremidades e ordens reversas de coleções de forma direta e semântica, sem recorrer a cálculos de índice ou iteradores manuais:
+
+Acesse extremidades e ordens reversas de coleções de forma direta e semântica, sem recorrer a cálculos de índice ou
+iteradores manuais:
 
 ```java
 List<Order> orders = fetchRecentOrders();
@@ -704,6 +724,7 @@ List<Order> newestFirst = orders.reversed();
 ```
 
 #### 4. Text Blocks (`"""`) para Consultas e Modelos Multilinha
+
 Mantenha legibilidade em queries SQL, JSONs ou templates sem operadores de concatenação `+`:
 
 ```java
@@ -722,7 +743,9 @@ String query = """
 ### Kotlin 2.4+: Recursos Idiomáticos Modernos
 
 #### 1. Data Classes com Imutabilidade e Cópia
-Use `val` em propriedades de `data class` para promover imutabilidade. Quando modificações forem necessárias, use a função utilitária `copy()`:
+
+Use `val` em propriedades de `data class` para promover imutabilidade. Quando modificações forem necessárias, use a
+função utilitária `copy()`:
 
 ```kotlin
 data class Account(
@@ -736,6 +759,7 @@ val updatedAccount = account.copy(balance = account.balance + depositAmount)
 ```
 
 #### 2. Sealed Interfaces para Modelagem de Domínio e Resultados
+
 Exaustividade garantida em tempo de compilação sem necessidade de bloco `else`:
 
 ```kotlin
@@ -752,6 +776,7 @@ fun handleResult(result: DomainResult<Order>) = when (result) {
 ```
 
 #### 3. Funções de Extensão com Semântica Limpa
+
 Enriqueça tipos para legibilidade de negócio sem poluir o modelo original com dependências:
 
 ```kotlin
@@ -772,6 +797,7 @@ val formatted = BigDecimal("149.90").toCurrencyString() // "R$ 149,90"
 > *"Deixe a área de acampamento sempre mais limpa do que você a encontrou."*
 
 Ao trabalhar em qualquer arquivo de código existente:
+
 1. **Renomeie variáveis obscuras** que você teve dificuldade para entender.
 2. **Elimine imports Fully Qualified Names (FQN)** no meio dos métodos — declare imports explícitos no topo do arquivo.
 3. **Remova código morto e comentado** — o versionamento Git é o responsável por preservar o histórico.
@@ -791,19 +817,28 @@ Utilize este checklist durante PR reviews e sessões de refatoração:
 - [ ] **Nomenclatura**: Nomes revelam intenção? Booleans são afirmativos (`isActive`)? Métodos usam verbo + substantivo?
 - [ ] **Tamanho de Funções**: Métodos são pequenos (máximo ~15-20 linhas) e possuem nível único de abstração (SLAP)?
 - [ ] **Parâmetros**: Nenhum método possui mais de 3 parâmetros (usou-se Parameter Object / Record / Data Class)?
-- [ ] **Sem Argumentos Flag**: Parâmetros booleanos que alteram comportamento interno foram divididos em métodos separados?
+- [ ] **Sem Argumentos Flag**: Parâmetros booleanos que alteram comportamento interno foram divididos em métodos
+  separados?
 - [ ] **Injeção de Dependências**: Spring Boot usa injeção de construtor sem `@Autowired` em fields?
 - [ ] **Null Safety**: Java usa `Optional` apenas em retorno de métodos? Kotlin evita operador de risco `!!`?
 - [ ] **Guard Clauses**: Estruturas aninhadas de `if/else` foram substituídas por retorno antecipado?
-- [ ] **Padrões Modernos**: Java 25 adota records e pattern matching? Kotlin 2.4 adota value classes e sealed interfaces?
+- [ ] **Padrões Modernos**: Java 25 adota records e pattern matching? Kotlin 2.4 adota value classes e sealed
+  interfaces?
 
 ---
 
 ## Skills Relacionadas
 
-Se a sua refatoração ultrapassar o escopo de legibilidade de método e exigir mudanças estruturais, ative as seguintes skills especializadas:
+Se a sua refatoração ultrapassar o escopo de legibilidade de método e exigir mudanças estruturais, ative as seguintes
+skills especializadas:
 
-- **[Princípios SOLID](../solid-principles/SKILL.md)**: Ative quando uma classe/função violar o Princípio da Responsabilidade Única (SRP), possuir alto acoplamento, ou necessitar de Inversão de Dependência (DIP).
-- **[Design Patterns](../design-patterns/SKILL.md)**: Ative quando blocos condicionais complexos exigirem substituição por Strategy, Factory Method, State, ou quando a construção de objetos complexos demandar Builder ou Fluent DSL.
-- **[Revisão de Concorrência](../concurrency-java21-review/SKILL.md)**: Ative quando a refatoração envolver Virtual Threads, thread safety, migração de `synchronized` para `ReentrantLock`, `CompletableFuture` ou contenção de recursos assíncronos.
-- **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Ative quando o código envolver sanitização de entrada de usuários, prevenção contra SQLi/XSS/SSRF, criptografia ou manuseio de dados sensíveis e credenciais (OWASP Top 10:2025).
+- **[Princípios SOLID](../solid-principles/SKILL.md)**: Ative quando uma classe/função violar o Princípio da
+  Responsabilidade Única (SRP), possuir alto acoplamento, ou necessitar de Inversão de Dependência (DIP).
+- **[Design Patterns](../design-patterns/SKILL.md)**: Ative quando blocos condicionais complexos exigirem substituição
+  por Strategy, Factory Method, State, ou quando a construção de objetos complexos demandar Builder ou Fluent DSL.
+- **[Revisão de Concorrência](../concurrency-java21-review/SKILL.md)**: Ative quando a refatoração envolver Virtual
+  Threads, thread safety, migração de `synchronized` para `ReentrantLock`, `CompletableFuture` ou contenção de recursos
+  assíncronos.
+- **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Ative quando o código envolver
+  sanitização de entrada de usuários, prevenção contra SQLi/XSS/SSRF, criptografia ou manuseio de dados sensíveis e
+  credenciais (OWASP Top 10:2025).

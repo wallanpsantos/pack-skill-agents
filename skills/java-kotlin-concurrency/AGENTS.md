@@ -48,8 +48,8 @@ regras de JVM abaixo para esses contextos, e não produza achados como se elas s
   conviver lado a lado durante uma migração, mas não é a recomendação para código novo. Um `JsonMapper`/`ObjectMapper`
   compartilhado é imutável após `build()` e thread-safe — nunca o reconfigure por requisição ou por thread.
 - Build: **Maven >= 3.9** (com `kotlin-maven-plugin` na versão compatível com o Kotlin do projeto) ou **Gradle >= 9.7**,
-  incluindo **Kotlin DSL** (`build.gradle.kts`). Confirme que o alvo de bytecode do módulo Kotlin
-  (`jvmToolchain(25)` no Gradle Kotlin DSL, ou o `jvmTarget` equivalente no `kotlin-maven-plugin`) é consistente com o
+  incluindo **Kotlin DSL** (`build.gradle.kts`). Confirme que o alvo de bytecode do módulo Kotlin (`jvmToolchain(25)` no
+  Gradle Kotlin DSL, ou o `jvmTarget` equivalente no `kotlin-maven-plugin`) é consistente com o
   baseline Java 25 do restante do projeto.
 - É **estritamente proibido** utilizar `--enable-preview`, APIs Preview/Incubating do JDK ou pacotes internos
   (`jdk.internal.*`), e, no lado Kotlin, APIs experimentais/delicadas de coroutines (`@ExperimentalCoroutinesApi`,
@@ -59,7 +59,8 @@ regras de JVM abaixo para esses contextos, e não produza achados como se elas s
   **Isso não afeta `coroutineScope`/`supervisorScope` do Kotlin** — são um mecanismo diferente, já estável há várias
   releases de `kotlinx.coroutines`, não um wrapper Kotlin sobre `StructuredTaskScope` (ver §1.7).
 - `ScopedValue` (JEP 506) é final/estável no Java 25 — use para contexto imutável de requisição **dentro do mesmo escopo
-  dinâmico** (ver §1.4). O equivalente conceitual em Kotlin é um elemento de `CoroutineContext` (`ThreadContextElement`),
+  dinâmico** (ver §1.4). O equivalente conceitual em Kotlin é um elemento de `CoroutineContext`
+  (`ThreadContextElement`),
   não `ScopedValue` — os dois não se misturam entre si (ver §1.7).
 
 ### 1.2 Thread Safety e Estado Compartilhado
@@ -88,20 +89,21 @@ regras de JVM abaixo para esses contextos, e não produza achados como se elas s
 - **VTs são sempre daemon threads** (`setDaemon(false)` lança `IllegalArgumentException`).
 - **VTs sempre rodam com `NORM_PRIORITY`** — alterações de prioridade não têm efeito.
 - **Nomeie VTs** via `Thread.ofVirtual().name(prefix, 0).start(...)` para rastreabilidade.
-- Para um serviço Kotlin idiomático e bloqueante em um stack Spring MVC (Boot 4.1 + `spring.threads.virtual.enabled=true`),
+- Para um serviço Kotlin idiomático e bloqueante em um stack Spring MVC (Boot 4.1 +
+  `spring.threads.virtual.enabled=true`),
   a recomendação é a mesma sem alteração: código Kotlin simples e bloqueante já se beneficia de Virtual Threads sem
   precisar de coroutines. Ver `references/kotlin-coroutines.md` §1 antes de introduzir coroutines nesse caminho.
 
 #### Internals da JVM (Mecanismo de Continuação)
 
-- Stacks de VTs vivem no **heap Java** (não em memória nativa/off-heap). Migração de platform threads para VTs
-  **desloca pressão de memória do off-heap para o heap** — aumente `-Xmx` proporcionalmente em containers.
+- Stacks de VTs vivem no **heap Java** (não em memória nativa/off-heap). Migração de platform threads para VTs **desloca
+  pressão de memória do off-heap para o heap** — aumente `-Xmx` proporcionalmente em containers.
 - Uma VT pode desmontar e remontar em **carriers diferentes**. Não presuma afinidade com carrier nem estado preso ao
   thread do SO.
 - O scheduler de VTs usa um `ForkJoinPool` **dedicado**, separado do `ForkJoinPool.commonPool()`. Só ajuste após
   medição em ambiente representativo:
-  - `-Djdk.virtualThreadScheduler.parallelism=N` (padrão: número de processadores visíveis)
-  - `-Djdk.virtualThreadScheduler.maxPoolSize=256` (padrão: 256)
+    - `-Djdk.virtualThreadScheduler.parallelism=N` (padrão: número de processadores visíveis)
+    - `-Djdk.virtualThreadScheduler.maxPoolSize=256` (padrão: 256)
 
 #### Pinning (Java 25)
 
@@ -214,10 +216,10 @@ Detalhe completo em `references/kotlin-coroutines.md`. Regras essenciais:
 - NUNCA utilize `double` ou `float` para representar valores monetários, em Java ou em Kotlin.
 - **`MathContext` é dígitos significativos, não casas decimais.** Usá-lo como limitador de escala corrompe valores
   grandes: `1500000.00.subtract(25.50, new MathContext(6, HALF_EVEN))` devolve `1500000` — o débito desaparece.
-  - Soma e subtração de `BigDecimal` são exatas: **não** aplique arredondamento.
-  - Divisão e multiplicação com arredondamento usam **escala explícita**:
-    `amount.divide(divisor, 6, RoundingMode.HALF_EVEN)`.
-  - `MathContext` só quando o domínio pedir precisão por dígitos significativos, com justificativa.
+    - Soma e subtração de `BigDecimal` são exatas: **não** aplique arredondamento.
+    - Divisão e multiplicação com arredondamento usam **escala explícita**:
+      `amount.divide(divisor, 6, RoundingMode.HALF_EVEN)`.
+    - `MathContext` só quando o domínio pedir precisão por dígitos significativos, com justificativa.
 - Em Kotlin, os operadores `+`, `-`, `*`, `/` sobre `BigDecimal` são apenas açúcar sintático para os mesmos métodos
   Java — o operador `/` sem escala é tão perigoso quanto `divide(BigDecimal)` sem argumentos em Java. Prefira a chamada
   explícita com escala e `RoundingMode` em vez do operador, no código de domínio financeiro.
@@ -226,16 +228,16 @@ Detalhe completo em `references/kotlin-coroutines.md`. Regras essenciais:
   construtor compacto (Java) ou no bloco `init`/construtor secundário validado (Kotlin):
   `equals` de `BigDecimal` compara escala, então `1.50` e `1.5` seriam objetos distintos.
 - Mutações concorrentes de saldo/estado financeiro DEVEM usar controle de concorrência explícito:
-  - **Padrão**: `@Version` (optimistic locking) + retry com backoff.
-  - **O retry fica FORA da transação.** O conflito é detectado no commit, depois que o método transacional retornou;
-    retry no mesmo método (ou dentro do mesmo proxy transacional) nunca captura o conflito.
-  - Com Spring Data, a exceção observável é `ObjectOptimisticLockingFailureException`
-    (`OptimisticLockingFailureException`), não `jakarta.persistence.OptimisticLockException`. Fazer `retryFor` no tipo
-    errado é um retry que nunca dispara.
-  - **Alternativas aceitas com justificativa explícita**: update atômico condicional
-    (`UPDATE ... SET balance = balance - ? WHERE balance >= ?`), `SELECT ... FOR UPDATE`, transação serializable.
-  - Update atômico via JPQL não incrementa `@Version` nem sincroniza o contexto de persistência — use
-    `flushAutomatically`/`clearAutomatically` e verifique o número de linhas afetadas.
+    - **Padrão**: `@Version` (optimistic locking) + retry com backoff.
+    - **O retry fica FORA da transação.** O conflito é detectado no commit, depois que o método transacional retornou;
+      retry no mesmo método (ou dentro do mesmo proxy transacional) nunca captura o conflito.
+    - Com Spring Data, a exceção observável é `ObjectOptimisticLockingFailureException`
+      (`OptimisticLockingFailureException`), não `jakarta.persistence.OptimisticLockException`. Fazer `retryFor` no tipo
+      errado é um retry que nunca dispara.
+    - **Alternativas aceitas com justificativa explícita**: update atômico condicional
+      (`UPDATE ... SET balance = balance - ? WHERE balance >= ?`), `SELECT ... FOR UPDATE`, transação serializable.
+    - Update atômico via JPQL não incrementa `@Version` nem sincroniza o contexto de persistência — use
+      `flushAutomatically`/`clearAutomatically` e verifique o número de linhas afetadas.
 - Lógica financeira NUNCA deve depender de `ConcurrentHashMap.size()` / `isEmpty()` — são estimativas.
 - Estruturas concorrentes em memória (`LongAdder`, `AtomicLong`, `ConcurrentHashMap`) NUNCA são fonte de verdade para
   saldo, estoque crítico ou consistência interprocesso.
@@ -313,10 +315,10 @@ Recomendações de migração por performance SÓ são válidas com evidência m
 ## 7. Observabilidade
 
 - Todo executor DEVE expor métricas via Micrometer/OTel (Evans et al., Cap. 11):
-  - **Counter**: eventos monotônicos (tarefas executadas, exceções, rejeições).
-  - **Gauge**: estados instantâneos (tamanho de fila, tarefas ativas, permits disponíveis).
-  - **Timer**: latências e durações.
-  - **DistributionSummary**: distribuições e tamanhos de payload/batch.
+    - **Counter**: eventos monotônicos (tarefas executadas, exceções, rejeições).
+    - **Gauge**: estados instantâneos (tamanho de fila, tarefas ativas, permits disponíveis).
+    - **Timer**: latências e durações.
+    - **DistributionSummary**: distribuições e tamanhos de payload/batch.
 - JFR é obrigatório para diagnóstico de pinning e contenção em produção, sempre com `maxsize` além de `maxage`.
 - Loggers DEVEM incluir thread name.
 - **Monitoramento padrão (Prometheus JVM metrics, VisualVM) mostra platform thread count (carriers)**, constante mesmo

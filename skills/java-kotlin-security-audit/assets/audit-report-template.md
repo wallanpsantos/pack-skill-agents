@@ -58,7 +58,9 @@
     - **CWE:** [ex.: CWE-639: Authorization Bypass Through User-Controlled Key]
 - **Localização:** `caminho/do/Arquivo.kt:linha` (ou chave no `application.yml` / GitHub Workflow)
 -
+
 **Pré-condições:** [O que o atacante precisa possuir: ex.: token de usuário comum autenticado, acesso à rede interna, etc.]
+
 - **Cadeia Fonte → Sumidouro (Source-to-Sink):**
     - *Fonte (Input):* [ex.: `@PathVariable String accountId` no controller `AccountController`]
     - *Caminho (Data Flow):* [ex.: parâmetro repassado para `accountService.getAccount(accountId)`]
