@@ -69,3 +69,7 @@ tmp/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# Superpowers and Worktrees
+.superpowers/
+.worktrees/
