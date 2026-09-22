@@ -8,6 +8,9 @@
   ],
   "skills": [
     "../skills/java-kotlin-security-audit",
-    "../skills/concurrency-java21-review"
+    "../skills/concurrency-java21-review",
+    "../skills/clean-code",
+    "../skills/design-patterns",
+    "../skills/solid-principles"
   ]
 }

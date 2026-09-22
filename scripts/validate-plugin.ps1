@@ -44,7 +44,13 @@ foreach ($r in $rules) {
 }
 
 # 3. Validação de Skills
-$skills = @("java-kotlin-security-audit", "concurrency-java21-review")
+$skills = @(
+    "java-kotlin-security-audit",
+    "concurrency-java21-review",
+    "clean-code",
+    "design-patterns",
+    "solid-principles"
+)
 foreach ($s in $skills) {
     $skillDir = Join-Path $repoRoot "skills/$s"
     $skillMd = Join-Path $skillDir "SKILL.md"

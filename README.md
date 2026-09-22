@@ -94,6 +94,9 @@ graph TD
     subgraph Core_Skills ["Habilidades Embutidas (Bundled Skills)"]
         SK_SEC["skills/java-kotlin-security-audit"]
         SK_CONC["skills/concurrency-java21-review"]
+        SK_CLEAN["skills/clean-code"]
+        SK_PAT["skills/design-patterns"]
+        SK_SOL["skills/solid-principles"]
     end
 
     subgraph Validation ["Validação de Integridade"]
@@ -104,24 +107,39 @@ graph TD
     P_UNI --> AGENTS
     P_UNI --> SK_SEC
     P_UNI --> SK_CONC
+    P_UNI --> SK_CLEAN
+    P_UNI --> SK_PAT
+    P_UNI --> SK_SOL
 
     P_GEM --> GEM
     GEM --> AGENTS
     P_GEM --> SK_SEC
     P_GEM --> SK_CONC
+    P_GEM --> SK_CLEAN
+    P_GEM --> SK_PAT
+    P_GEM --> SK_SOL
 
     P_CLA --> CLA
     CLA --> AGENTS
     P_CLA --> SK_SEC
     P_CLA --> SK_CONC
+    P_CLA --> SK_CLEAN
+    P_CLA --> SK_PAT
+    P_CLA --> SK_SOL
 
     P_COD --> AGENTS
     P_COD --> SK_SEC
     P_COD --> SK_CONC
+    P_COD --> SK_CLEAN
+    P_COD --> SK_PAT
+    P_COD --> SK_SOL
 
     P_GRO --> AGENTS
     P_GRO --> SK_SEC
     P_GRO --> SK_CONC
+    P_GRO --> SK_CLEAN
+    P_GRO --> SK_PAT
+    P_GRO --> SK_SOL
 
     VAL_PS1 -. Valida .-> P_UNI
     VAL_PS1 -. Valida .-> Core_Skills
@@ -186,7 +204,7 @@ Aponte o Codex Agent CLI ou ambiente Codex para a raiz do repositório:
 ```bash
 codex --profile .codex-plugin/plugin.json
 ```
-As habilidades `java-kotlin-security-audit` e `concurrency-java21-review` serão registradas no catálogo de ferramentas do Codex.
+As habilidades `java-kotlin-security-audit`, `concurrency-java21-review`, `clean-code`, `design-patterns` e `solid-principles` serão registradas no catálogo de ferramentas do Codex.
 
 ---
 
@@ -204,7 +222,19 @@ grok --system-prompt AGENTS.md --skills-dir skills/
 
 ## 5. Habilidades Embutidas (Bundled Skills)
 
-O pacote fornece duas habilidades centrais de alta especialização técnica, além de skills complementares de engenharia limpa:
+O pacote fornece cinco habilidades centrais de alta especialização técnica para engenharia de software na JVM:
+
+### Matriz Geral de Habilidades
+
+| Habilidade | Contrato Canônico | Foco Principal | Gatilhos de Ativação | Baseline Tecnológico |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auditoria de Segurança** | [`skills/java-kotlin-security-audit`](./skills/java-kotlin-security-audit/SKILL.md) | OWASP Top 10:2025, ASVS 5.0, BOLA/BFLA, SSRF, PQC (FIPS 203/204) | Auditorias pré-produção, pentests, análise de injeção, conformidade OWASP | Java 25 / Kotlin 2.4 / Spring Security 7.1 |
+| **Concorrência Moderna** | [`skills/concurrency-java21-review`](./skills/concurrency-java21-review/SKILL.md) | Virtual Threads (Loom), carrier pinning, `ReentrantLock`, `CompletableFuture` | Migração Loom, deadlocks, concorrência assíncrona, thread safety | Java 25 LTS / Kotlin 2.4 |
+| **Clean Code** | [`skills/clean-code`](./skills/clean-code/SKILL.md) | DRY, KISS, YAGNI, complexidade ciclomática, convenções de nomenclatura e code smells | Limpeza e refatoração de código, simplificação de métodos, legibilidade | Java 25 LTS / Kotlin 2.4+ |
+| **Padrões de Projeto** | [`skills/design-patterns`](./skills/design-patterns/SKILL.md) | Padrões GoF (Criacionais, Estruturais, Comportamentais) e cálculo monetário seguro | Implementação de patterns, arquitetura de classes, precisão com `BigDecimal` | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1 |
+| **Princípios SOLID** | [`skills/solid-principles`](./skills/solid-principles/SKILL.md) | SRP, OCP, LSP, ISP, DIP com tipagem estática moderna (`sealed`, `record`) | Design e modularização de classes, desacoplamento, refatoração estrutural | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1 |
+
+---
 
 ### 5.1. Auditoria de Segurança JVM (`skills/java-kotlin-security-audit`)
 Documentação detalhada: [`skills/java-kotlin-security-audit/SKILL.md`](./skills/java-kotlin-security-audit/SKILL.md)
@@ -245,10 +275,38 @@ Documentação detalhada: [`skills/concurrency-java21-review/SKILL.md`](./skills
 
 ---
 
-### 5.3. Habilidades Complementares de Engenharia
-- **Clean Code:** [`skills/clean-code/SKILL.md`](./skills/clean-code/SKILL.md) — Diretrizes de legibilidade, clareza idiomática e refatoração de complexidade cognitiva.
-- **Design Patterns:** [`skills/design-patterns/SKILL.md`](./skills/design-patterns/SKILL.md) — Aplicação prática de padrões GoF e arquiteturais adaptados para a JVM contemporânea.
-- **SOLID Principles:** [`skills/solid-principles/SKILL.md`](./skills/solid-principles/SKILL.md) — Projeto de software orientado a objetos modular, coeso e extensível.
+### 5.3. Clean Code & Manutenibilidade Idiomática (`skills/clean-code`)
+Documentação detalhada: [`skills/clean-code/SKILL.md`](./skills/clean-code/SKILL.md)
+
+- **Escopo e Cobertura:**
+  - **Princípios Fundamentais:** Aplicação prática de DRY (*Don't Repeat Yourself*), KISS (*Keep It Simple, Stupid*) e YAGNI (*You Aren't Gonna Need It*).
+  - **Nomenclatura Expressiva & Idiomática:** Regras para Java 25 e Kotlin 2.4 eliminando abreviações ambíguas, prefixos e sufixos desnecessários, com nomes reveladores de intenção.
+  - **Design de Funções e Métodos:** Limites estritos de tamanho (< 20 linhas), responsabilidade única por método, número reduzido de parâmetros (máximo 3, uso de records/data classes para agrupamento contextual).
+  - **Refatoração de Complexidade:** Redução de complexidade ciclomática e cognitiva através de guard clauses, eliminação de aninhamentos profundos e substituição de condicionais encadeadas.
+  - **Eliminação de Code Smells:** Identificação e resolução de Feature Envy, Long Method, Large Class, Data Clumps e Primitive Obsession.
+
+---
+
+### 5.4. Padrões de Projeto & Arquiteturais na JVM (`skills/design-patterns`)
+Documentação detalhada: [`skills/design-patterns/SKILL.md`](./skills/design-patterns/SKILL.md)
+
+- **Escopo e Cobertura:**
+  - **Padrões Criacionais Idiomáticos:** Builder seguro com records e classes imutáveis, Factory com pattern matching e interfaces seladas, e injeção de dependência por construtor no Spring Boot 4.1.1+.
+  - **Padrões Estruturais Modernos:** Adapter, Decorator e Proxy idiomáticos, utilizando Class Delegation nativa em Kotlin (`by`) e interfaces estritas em Java 25.
+  - **Padrões Comportamentais:** Strategy com funções de primeira classe / lambdas, Observer com publicadores de eventos assíncronos (`ApplicationEventPublisher`) e State com `sealed interface` / classes seladas.
+  - **Cálculo Monetário Seguro:** Uso estrito de `BigDecimal` com `RoundingMode.HALF_EVEN` ou `HALF_UP`, prevenção total de representações em ponto flutuante (`float`/`double`) para valores monetários.
+
+---
+
+### 5.5. Princípios SOLID na JVM Moderna (`skills/solid-principles`)
+Documentação detalhada: [`skills/solid-principles/SKILL.md`](./skills/solid-principles/SKILL.md)
+
+- **Escopo e Cobertura:**
+  - **SRP (Single Responsibility Principle):** Decomposição de classes com múltiplas razões de mudança em componentes coesos e especializados.
+  - **OCP (Open/Closed Principle):** Extensibilidade sem modificação utilizando polimorfismo, `sealed interface` com pattern matching exaustivo e estratégias injetáveis.
+  - **LSP (Liskov Substitution Principle):** Preservação de invariantes e contratos de subtipos sem lançar exceções inesperadas (`UnsupportedOperationException`) ou enfraquecer pré/pós-condições.
+  - **ISP (Interface Segregation Principle):** Interfaces enxutas e focadas no cliente em vez de contratos sobrecarregados com métodos irrelevantes.
+  - **DIP (Dependency Inversion Principle):** Dependência em abstrações e interfaces com isolamento de acoplamento a frameworks, garantindo testabilidade e portabilidade.
 
 ---
 
@@ -277,6 +335,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
   [PASS] Documento presente: README.md
   [PASS] Skill valida: java-kotlin-security-audit
   [PASS] Skill valida: concurrency-java21-review
+  [PASS] Skill valida: clean-code
+  [PASS] Skill valida: design-patterns
+  [PASS] Skill valida: solid-principles
 ==> SUCESSO: Todos os componentes do agente foram validados!
 ```
 
@@ -298,6 +359,9 @@ bash scripts/validate-plugin.sh
   [PASS] Documento presente: README.md
   [PASS] Skill valida: java-kotlin-security-audit
   [PASS] Skill valida: concurrency-java21-review
+  [PASS] Skill valida: clean-code
+  [PASS] Skill valida: design-patterns
+  [PASS] Skill valida: solid-principles
 ==> SUCESSO: Todos os componentes do agente foram validados!
 ```
 

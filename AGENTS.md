@@ -23,6 +23,18 @@ Este agente possui habilidades embutidas que devem ser invocadas sob demanda:
 - **Quando ativar:** Revisão de concorrência, migração para Virtual Threads no Java 21/25, análise de thread pinning, deadlocks, `synchronized` vs `ReentrantLock`, uso correto de `CompletableFuture` e coroutines.
 - **Ação:** Siga o checklist de concorrência em `skills/concurrency-java21-review/SKILL.md`.
 
+### 3. `clean-code` (`skills/clean-code/SKILL.md`)
+- **Quando ativar:** Revisões de legibilidade, refatoração de código complexo ou legado, redução de complexidade ciclomática/cognitiva, aplicação dos princípios DRY, KISS e YAGNI, eliminação de code smells e melhoria de manutenibilidade.
+- **Ação:** Siga as convenções de nomenclatura, limites de funções e regras de refatoração em `skills/clean-code/SKILL.md`.
+
+### 4. `design-patterns` (`skills/design-patterns/SKILL.md`)
+- **Quando ativar:** Implementação e refatoração de padrões GoF (Criacionais, Estruturais, Comportamentais) e padrões arquiteturais em Java 25 e Kotlin 2.4, modelagem de domínio rica, e cálculos com precisão monetária estrita (`BigDecimal`).
+- **Ação:** Siga os catálogos idiomáticos e diretrizes de desacoplamento em `skills/design-patterns/SKILL.md`.
+
+### 5. `solid-principles` (`skills/solid-principles/SKILL.md`)
+- **Quando ativar:** Avaliação e refatoração arquitetural baseada nos princípios SOLID (SRP, OCP, LSP, ISP, DIP), modularização de classes/serviços, isolamento de contratos e inversão de dependência em Java 25 e Kotlin 2.4.
+- **Ação:** Siga os checklists de conformidade e decisões de design em `skills/solid-principles/SKILL.md`.
+
 ---
 
 ## Regras de Comportamento e Resposta
