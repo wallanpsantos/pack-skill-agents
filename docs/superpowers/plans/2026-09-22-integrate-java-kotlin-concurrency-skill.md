@@ -69,7 +69,7 @@ scripts/
 - Consumes: A nova skill em `skills/java-kotlin-concurrency/`.
 - Produces: Manifestos JSON válidos e scripts de validação atualizados para verificar `java-kotlin-concurrency`.
 
-- [ ] **Step 1: Atualizar `plugin.json` na raiz**
+- [x] **Step 1: Atualizar `plugin.json` na raiz**
 
 Incluir `"./skills/java-kotlin-concurrency"` na lista de skills:
 ```json
@@ -93,7 +93,7 @@ Incluir `"./skills/java-kotlin-concurrency"` na lista de skills:
 }
 ```
 
-- [ ] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
+- [x] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
 
 Adicionar `"../skills/java-kotlin-concurrency"` na lista `"skills"` de:
 - `.claude-plugin/plugin.json`
@@ -101,7 +101,7 @@ Adicionar `"../skills/java-kotlin-concurrency"` na lista `"skills"` de:
 - `.codex-plugin/plugin.json`
 - `.grok-plugin/plugin.json`
 
-- [ ] **Step 3: Atualizar `scripts/validate-plugin.ps1` e `scripts/validate-plugin.sh`**
+- [x] **Step 3: Atualizar `scripts/validate-plugin.ps1` e `scripts/validate-plugin.sh`**
 
 Em `scripts/validate-plugin.ps1`:
 ```powershell
@@ -127,7 +127,7 @@ SKILLS=(
 )
 ```
 
-- [ ] **Step 4: Executar validação dos manifestos**
+- [x] **Step 4: Executar validação dos manifestos**
 
 Executar:
 ```powershell
@@ -135,7 +135,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
 Expected: `[PASS] Skill valida: java-kotlin-concurrency` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code 0.
 
-- [ ] **Step 5: Commit das atualizações dos manifestos**
+- [x] **Step 5: Commit das atualizações dos manifestos**
 
 ```bash
 git add plugin.json .claude-plugin/ .gemini-plugin/ .codex-plugin/ .grok-plugin/ scripts/validate-plugin.*
@@ -155,7 +155,7 @@ git commit -m "feat(manifests): register java-kotlin-concurrency skill across al
 - Consumes: A taxonomia e gatilhos da skill `java-kotlin-concurrency`.
 - Produces: Prompts de sistema e entrypoints atualizados com instruções de concorrência moderna.
 
-- [ ] **Step 1: Atualizar `AGENTS.md` para destacar `java-kotlin-concurrency`**
+- [x] **Step 1: Atualizar `AGENTS.md` para destacar `java-kotlin-concurrency`**
 
 No `AGENTS.md`, atualizar a seção de habilidades bundled:
 ```markdown
@@ -170,7 +170,7 @@ No `AGENTS.md`, atualizar a seção de habilidades bundled:
 - **Ação:** Siga as diretrizes de `skills/concurrency-java21-review/SKILL.md`.
 ```
 
-- [ ] **Step 2: Atualizar `CLAUDE.md`**
+- [x] **Step 2: Atualizar `CLAUDE.md`**
 
 Adicionar comando de varredura de concorrência:
 ```markdown
@@ -180,11 +180,11 @@ Adicionar comando de varredura de concorrência:
 - Validação do plugin: `bash scripts/validate-plugin.sh`
 ```
 
-- [ ] **Step 3: Atualizar `GEMINI.md`**
+- [x] **Step 3: Atualizar `GEMINI.md`**
 
 Listar `skills/java-kotlin-concurrency/SKILL.md` na lista de skills carregadas automaticamente.
 
-- [ ] **Step 4: Commit das atualizações de personas**
+- [x] **Step 4: Commit das atualizações de personas**
 
 ```bash
 git add AGENTS.md CLAUDE.md GEMINI.md
@@ -202,7 +202,7 @@ git commit -m "docs(personas): integrate java-kotlin-concurrency in AGENTS.md, C
 - Consumes: Código-fonte Java e Kotlin na JVM.
 - Produces: Varredura automatizada equivalente ao `scan-concurrency.sh` para desenvolvedores Windows (PowerShell 5.1 e 7+).
 
-- [ ] **Step 1: Criar `skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`**
+- [x] **Step 1: Criar `skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`**
 
 Conteúdo do script PowerShell implementando as mesmas regras e checagens (preview APIs, thread pinning, locks, ScopedValue, CompletableFuture, backpressure, interrupção, BigDecimal/MathContext, coroutines, GlobalScope, Dispatchers, runBlocking):
 ```powershell
@@ -280,7 +280,7 @@ Run-Check "BigDecimal arithmetic Kotlin" @(".kt") "\.divide\(|\.multiply\(|\s*\/
 Write-Output "=== Varredura de concorrência concluída ==="
 ```
 
-- [ ] **Step 2: Testar execução do `scan-concurrency.ps1` no diretório de skills**
+- [x] **Step 2: Testar execução do `scan-concurrency.ps1` no diretório de skills**
 
 Executar:
 ```powershell
@@ -288,7 +288,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-concurren
 ```
 Expected: Saída formatada com cabeçalhos de Java e Kotlin e conclusão com sucesso.
 
-- [ ] **Step 3: Commit do script PowerShell**
+- [x] **Step 3: Commit do script PowerShell**
 
 ```bash
 git add skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1
@@ -311,7 +311,7 @@ git commit -m "feat(concurrency): add cross-platform scan-concurrency.ps1 for Wi
 - Consumes: Novo caminho `skills/java-kotlin-concurrency/SKILL.md`.
 - Produces: Links relativos atualizados apontando para a nova skill canônica de concorrência.
 
-- [ ] **Step 1: Atualizar referências em `skills/clean-code/`**
+- [x] **Step 1: Atualizar referências em `skills/clean-code/`**
 
 Em `skills/clean-code/SKILL.md` e `skills/clean-code/README.md`, substituir referências de:
 `[../concurrency-java21-review/SKILL.md]` ou `[concurrency-java21-review]`
@@ -319,15 +319,15 @@ Por:
 `[../java-kotlin-concurrency/SKILL.md]` com descrição atualizada:
 `- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.`
 
-- [ ] **Step 2: Atualizar referências em `skills/design-patterns/`**
+- [x] **Step 2: Atualizar referências em `skills/design-patterns/`**
 
 Em `skills/design-patterns/SKILL.md` e `skills/design-patterns/README.md`, atualizar os links relativos de concorrência para apontar para `../java-kotlin-concurrency/SKILL.md`.
 
-- [ ] **Step 3: Atualizar referências em `skills/solid-principles/`**
+- [x] **Step 3: Atualizar referências em `skills/solid-principles/`**
 
 Em `skills/solid-principles/SKILL.md` e `skills/solid-principles/README.md`, atualizar os links relativos de concorrência para apontar para `../java-kotlin-concurrency/SKILL.md`.
 
-- [ ] **Step 4: Verificar integridade de todos os links atualizados**
+- [x] **Step 4: Verificar integridade de todos os links atualizados**
 
 Executar script PowerShell de validação de links:
 ```powershell
@@ -349,7 +349,7 @@ foreach ($s in $skillsToCheck) {
 ```
 Expected: Todos `Link OK` sem nenhum erro.
 
-- [ ] **Step 5: Commit das referências atualizadas**
+- [x] **Step 5: Commit das referências atualizadas**
 
 ```bash
 git add skills/clean-code/ skills/design-patterns/ skills/solid-principles/
@@ -368,7 +368,7 @@ git commit -m "refactor(skills): update cross-references to point to canonical j
 - Consumes: Todo o ecossistema integrado com `java-kotlin-concurrency`.
 - Produces: Documentação raiz consistente com diagrama Mermaid atualizado e validação completa passing.
 
-- [ ] **Step 1: Atualizar `README.md` raiz**
+- [x] **Step 1: Atualizar `README.md` raiz**
 
 1. No diagrama Mermaid arquitetural:
    - Adicionar o nó `SK_CONC_NEW["java-kotlin-concurrency<br/>(Java 25 & Kotlin 2.4)"]`.
@@ -377,7 +377,7 @@ git commit -m "refactor(skills): update cross-references to point to canonical j
 3. Na seção técnica detalhada:
    - Adicionar subseção explicando a skill `java-kotlin-concurrency`, seus 9 guias temáticos em `references/` e os scripts de varredura `scan-concurrency.sh` e `scan-concurrency.ps1`.
 
-- [ ] **Step 2: Executar validação completa do agente**
+- [x] **Step 2: Executar validação completa do agente**
 
 Executar:
 ```powershell
@@ -385,7 +385,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
 Expected: Todas as skills (inclusive `java-kotlin-concurrency`) validadas com sucesso e exit code 0.
 
-- [ ] **Step 3: Testar varredura de concorrência e segurança**
+- [x] **Step 3: Testar varredura de concorrência e segurança**
 
 Executar:
 ```powershell
@@ -394,7 +394,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-concurren
 ```
 Expected: Ambos os scripts executam com sucesso.
 
-- [ ] **Step 4: Commit final de documentação e fechamento**
+- [x] **Step 4: Commit final de documentação e fechamento**
 
 ```bash
 git add README.md docs/superpowers/plans/
