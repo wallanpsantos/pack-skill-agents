@@ -1107,7 +1107,8 @@ Utilize este checklist prático durante auditorias de código e revisões de Pul
   responsabilidade única, regras DRY, KISS, YAGNI e Boy Scout Rule.
 - **[Design Patterns](../design-patterns/SKILL.md)**: Implementações canônicas dos padrões GoF (Strategy, Factory
   Method, Adapter, Decorator, Builder) que concretizam os princípios SOLID.
-- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin
+  Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Boas práticas de segurança aplicadas
   à validação de domínio e controle de acesso (OWASP Top 10:2025).
 

@@ -405,6 +405,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 
 Expected: `[PASS] Skill valida: clean-code`, `[PASS] Skill valida: design-patterns`,
 `[PASS] Skill valida: solid-principles` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code
+
 0.
 
 - [x] **Step 7: Commit das atualizações de integração**

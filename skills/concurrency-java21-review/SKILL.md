@@ -34,15 +34,15 @@ Spring Boot >= 3.4.5. No preview/incubating APIs.
 
 Progress:
 
-- [ ]    
+- [ ] 
     1. Scope — identify shared mutable state, entry points, thread boundaries
-- [ ]    
+- [ ] 
     2. Baseline — reject preview/incubating APIs; confirm Spring Boot >= 3.4.5 if Spring is present
-- [ ]    
+- [ ] 
     3. Checklist pass — walk High → Medium → Modern items below
-- [ ]    
+- [ ] 
     4. Deep dive — load only the reference files that match findings
-- [ ]    
+- [ ] 
     5. Report — emit findings in the output format below
 
 ### Step 1 — Scope
@@ -108,7 +108,7 @@ Map:
   block inside the monitor.
 - [ ] Executor has observability with proper Micrometer instruments: `Counter` (counts/events), `Gauge` (queue
   size/active tasks), `Timer` (latency/durations), `DistributionSummary` (payload sizes/histograms) (Evans et al., Ch.
-  11)
+    11)
 - [ ] `@Async` executor configured with rejection policy, naming, and metrics
 - [ ] No performance antipatterns present, such as "Tuning by Folklore" (applying flags/tunings without context) or
   "Distracted by Shiny" (adopting VTs without profiling) (Evans et al., App. B)

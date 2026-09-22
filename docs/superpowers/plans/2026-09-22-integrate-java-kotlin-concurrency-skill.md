@@ -1,20 +1,36 @@
 # Integração da Skill `java-kotlin-concurrency` Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:
+> executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Integrar a nova skill `java-kotlin-concurrency` de forma completa e consistente em todo o ecossistema do agente `agent-eng-backend-jvm`, atualizando manifestos multi-IA, personas (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`), documentação raiz (`README.md`), malha de referências cruzadas das demais skills (`clean-code`, `design-patterns`, `solid-principles`), suíte de validação automatizada e provendo script de varredura multiplataforma (`scan-concurrency.ps1`).
+**Goal:** Integrar a nova skill `java-kotlin-concurrency` de forma completa e consistente em todo o ecossistema do
+agente `agent-eng-backend-jvm`, atualizando manifestos multi-IA, personas (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`),
+documentação raiz (`README.md`), malha de referências cruzadas das demais skills (`clean-code`, `design-patterns`,
+`solid-principles`), suíte de validação automatizada e provendo script de varredura multiplataforma
+(`scan-concurrency.ps1`).
 
-**Architecture:** A nova skill `skills/java-kotlin-concurrency` assume o papel principal de autoridade em concorrência, paralelismo, Virtual Threads (Project Loom) e Kotlin Coroutines para Java 25 LTS e Kotlin 2.4+ no Spring Boot 4.1.1+. Todas as demais skills que tratavam concorrência redirecionam suas referências para ela. Os manifestos de IA (`plugin.json` e `.<IA>-plugin/`) e os scripts de validação (`validate-plugin.*`) passam a reconhecer formalmente a nova skill.
+**Architecture:** A nova skill `skills/java-kotlin-concurrency` assume o papel principal de autoridade em concorrência,
+paralelismo, Virtual Threads (Project Loom) e Kotlin Coroutines para Java 25 LTS e Kotlin 2.4+ no Spring Boot 4.1.1+.
+Todas as demais skills que tratavam concorrência redirecionam suas referências para ela. Os manifestos de IA
+(`plugin.json` e `.<IA>-plugin/`) e os scripts de validação (`validate-plugin.*`) passam a reconhecer formalmente a nova
+skill.
 
-**Tech Stack:** Java 25 LTS (Virtual Threads, ScopedValue, ReentrantLock, ForkJoinPool), Kotlin 2.4+ (Coroutines, Mutex, Flow, Dispatchers, Structured Concurrency), Spring Boot 4.1.1+ (Spring Framework 7.0, Virtual Threads enabled), JSON, PowerShell e Bash.
+**Tech Stack:** Java 25 LTS (Virtual Threads, ScopedValue, ReentrantLock, ForkJoinPool), Kotlin 2.4+ (Coroutines, Mutex,
+Flow, Dispatchers, Structured Concurrency), Spring Boot 4.1.1+ (Spring Framework 7.0, Virtual Threads enabled), JSON,
+PowerShell e Bash.
 
 ## Global Constraints
 
-- **Preservação de Escopo da Skill:** `java-kotlin-concurrency` é estritamente voltada para JVM de servidor (Java 25 LTS e Kotlin 2.4+ no alvo JVM). Mobile, KMP e frontend permanecem fora de escopo.
-- **Validade Formal dos Manifestos:** Todos os manifestos JSON (`plugin.json` e `.<IA>-plugin/plugin.json`) devem ser JSON RFC 8259 estrito.
-- **Conformidade `agentskills.io`:** A nova skill e todas as demais devem manter frontmatter YAML estrito com `name` e `description`.
-- **Integridade de Links Relativos:** 100% dos links cruzados entre skills e documentações devem ser links relativos Markdown válidos e existentes no sistema de arquivos.
-- **Validação Cross-Platform:** `scripts/validate-plugin.ps1` e `scripts/validate-plugin.sh` devem validar todas as skills registradas com código de saída 0.
+- **Preservação de Escopo da Skill:** `java-kotlin-concurrency` é estritamente voltada para JVM de servidor (Java 25 LTS
+  e Kotlin 2.4+ no alvo JVM). Mobile, KMP e frontend permanecem fora de escopo.
+- **Validade Formal dos Manifestos:** Todos os manifestos JSON (`plugin.json` e `.<IA>-plugin/plugin.json`) devem ser
+  JSON RFC 8259 estrito.
+- **Conformidade `agentskills.io`:** A nova skill e todas as demais devem manter frontmatter YAML estrito com `name` e
+  `description`.
+- **Integridade de Links Relativos:** 100% dos links cruzados entre skills e documentações devem ser links relativos
+  Markdown válidos e existentes no sistema de arquivos.
+- **Validação Cross-Platform:** `scripts/validate-plugin.ps1` e `scripts/validate-plugin.sh` devem validar todas as
+  skills registradas com código de saída 0.
 
 ---
 
@@ -57,6 +73,7 @@ scripts/
 ### Task 1: Atualização dos Manifestos Multi-IA e Scripts de Validação
 
 **Files:**
+
 - Modify: `plugin.json`
 - Modify: `.claude-plugin/plugin.json`
 - Modify: `.gemini-plugin/plugin.json`
@@ -66,12 +83,14 @@ scripts/
 - Modify: `scripts/validate-plugin.sh`
 
 **Interfaces:**
+
 - Consumes: A nova skill em `skills/java-kotlin-concurrency/`.
 - Produces: Manifestos JSON válidos e scripts de validação atualizados para verificar `java-kotlin-concurrency`.
 
 - [x] **Step 1: Atualizar `plugin.json` na raiz**
 
 Incluir `"./skills/java-kotlin-concurrency"` na lista de skills:
+
 ```json
 {
   "name": "agent-eng-backend-jvm",
@@ -96,6 +115,7 @@ Incluir `"./skills/java-kotlin-concurrency"` na lista de skills:
 - [x] **Step 2: Atualizar os manifestos nas pastas `.<IA>-plugin/`**
 
 Adicionar `"../skills/java-kotlin-concurrency"` na lista `"skills"` de:
+
 - `.claude-plugin/plugin.json`
 - `.gemini-plugin/plugin.json`
 - `.codex-plugin/plugin.json`
@@ -104,6 +124,7 @@ Adicionar `"../skills/java-kotlin-concurrency"` na lista `"skills"` de:
 - [x] **Step 3: Atualizar `scripts/validate-plugin.ps1` e `scripts/validate-plugin.sh`**
 
 Em `scripts/validate-plugin.ps1`:
+
 ```powershell
 $skills = @(
     "java-kotlin-security-audit",
@@ -116,6 +137,7 @@ $skills = @(
 ```
 
 Em `scripts/validate-plugin.sh`:
+
 ```bash
 SKILLS=(
     "java-kotlin-security-audit"
@@ -130,10 +152,13 @@ SKILLS=(
 - [x] **Step 4: Executar validação dos manifestos**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
-Expected: `[PASS] Skill valida: java-kotlin-concurrency` e `==> SUCESSO: Todos os componentes do agente foram validados!` com exit code 0.
+
+Expected: `[PASS] Skill valida: java-kotlin-concurrency` e
+`==> SUCESSO: Todos os componentes do agente foram validados!` com exit code 0.
 
 - [x] **Step 5: Commit das atualizações dos manifestos**
 
@@ -147,17 +172,20 @@ git commit -m "feat(manifests): register java-kotlin-concurrency skill across al
 ### Task 2: Atualização dos Orquestradores de Persona (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`)
 
 **Files:**
+
 - Modify: `AGENTS.md`
 - Modify: `CLAUDE.md`
 - Modify: `GEMINI.md`
 
 **Interfaces:**
+
 - Consumes: A taxonomia e gatilhos da skill `java-kotlin-concurrency`.
 - Produces: Prompts de sistema e entrypoints atualizados com instruções de concorrência moderna.
 
 - [x] **Step 1: Atualizar `AGENTS.md` para destacar `java-kotlin-concurrency`**
 
 No `AGENTS.md`, atualizar a seção de habilidades bundled:
+
 ```markdown
 ### 2. `java-kotlin-concurrency` (`skills/java-kotlin-concurrency/SKILL.md`)
 
@@ -173,6 +201,7 @@ No `AGENTS.md`, atualizar a seção de habilidades bundled:
 - [x] **Step 2: Atualizar `CLAUDE.md`**
 
 Adicionar comando de varredura de concorrência:
+
 ```markdown
 ## Comandos Rápidos
 - Pré-varredura de segurança: `bash skills/java-kotlin-security-audit/scripts/quick_scan.sh <diretório>`
@@ -196,15 +225,21 @@ git commit -m "docs(personas): integrate java-kotlin-concurrency in AGENTS.md, C
 ### Task 3: Criação do Script de Varredura Multiplataforma (`scan-concurrency.ps1`)
 
 **Files:**
+
 - Create: `skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`
 
 **Interfaces:**
+
 - Consumes: Código-fonte Java e Kotlin na JVM.
-- Produces: Varredura automatizada equivalente ao `scan-concurrency.sh` para desenvolvedores Windows (PowerShell 5.1 e 7+).
+- Produces: Varredura automatizada equivalente ao `scan-concurrency.sh` para desenvolvedores Windows (PowerShell 5.1 e
+  7+).
 
 - [x] **Step 1: Criar `skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`**
 
-Conteúdo do script PowerShell implementando as mesmas regras e checagens (preview APIs, thread pinning, locks, ScopedValue, CompletableFuture, backpressure, interrupção, BigDecimal/MathContext, coroutines, GlobalScope, Dispatchers, runBlocking):
+Conteúdo do script PowerShell implementando as mesmas regras e checagens (preview APIs, thread pinning, locks,
+ScopedValue, CompletableFuture, backpressure, interrupção, BigDecimal/MathContext, coroutines, GlobalScope, Dispatchers,
+runBlocking):
+
 ```powershell
 <#
 .SYNOPSIS
@@ -283,9 +318,11 @@ Write-Output "=== Varredura de concorrência concluída ==="
 - [x] **Step 2: Testar execução do `scan-concurrency.ps1` no diretório de skills**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-concurrency\scripts\scan-concurrency.ps1 skills
 ```
+
 Expected: Saída formatada com cabeçalhos de Java e Kotlin e conclusão com sucesso.
 
 - [x] **Step 3: Commit do script PowerShell**
@@ -300,6 +337,7 @@ git commit -m "feat(concurrency): add cross-platform scan-concurrency.ps1 for Wi
 ### Task 4: Atualização da Malha de Referências Cruzadas nas Demais Skills
 
 **Files:**
+
 - Modify: `skills/clean-code/SKILL.md`
 - Modify: `skills/clean-code/README.md`
 - Modify: `skills/design-patterns/SKILL.md`
@@ -308,6 +346,7 @@ git commit -m "feat(concurrency): add cross-platform scan-concurrency.ps1 for Wi
 - Modify: `skills/solid-principles/README.md`
 
 **Interfaces:**
+
 - Consumes: Novo caminho `skills/java-kotlin-concurrency/SKILL.md`.
 - Produces: Links relativos atualizados apontando para a nova skill canônica de concorrência.
 
@@ -321,15 +360,18 @@ Por:
 
 - [x] **Step 2: Atualizar referências em `skills/design-patterns/`**
 
-Em `skills/design-patterns/SKILL.md` e `skills/design-patterns/README.md`, atualizar os links relativos de concorrência para apontar para `../java-kotlin-concurrency/SKILL.md`.
+Em `skills/design-patterns/SKILL.md` e `skills/design-patterns/README.md`, atualizar os links relativos de concorrência
+para apontar para `../java-kotlin-concurrency/SKILL.md`.
 
 - [x] **Step 3: Atualizar referências em `skills/solid-principles/`**
 
-Em `skills/solid-principles/SKILL.md` e `skills/solid-principles/README.md`, atualizar os links relativos de concorrência para apontar para `../java-kotlin-concurrency/SKILL.md`.
+Em `skills/solid-principles/SKILL.md` e `skills/solid-principles/README.md`, atualizar os links relativos de
+concorrência para apontar para `../java-kotlin-concurrency/SKILL.md`.
 
 - [x] **Step 4: Verificar integridade de todos os links atualizados**
 
 Executar script PowerShell de validação de links:
+
 ```powershell
 $skillsToCheck = @("skills/clean-code/SKILL.md", "skills/design-patterns/SKILL.md", "skills/solid-principles/SKILL.md")
 foreach ($s in $skillsToCheck) {
@@ -347,6 +389,7 @@ foreach ($s in $skillsToCheck) {
     }
 }
 ```
+
 Expected: Todos `Link OK` sem nenhum erro.
 
 - [x] **Step 5: Commit das referências atualizadas**
@@ -361,37 +404,45 @@ git commit -m "refactor(skills): update cross-references to point to canonical j
 ### Task 5: Atualização da Documentação Central (`README.md`) e Validação End-to-End
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-09-22-integrate-java-kotlin-concurrency-skill.md` (Checklists de progresso)
 
 **Interfaces:**
+
 - Consumes: Todo o ecossistema integrado com `java-kotlin-concurrency`.
 - Produces: Documentação raiz consistente com diagrama Mermaid atualizado e validação completa passing.
 
 - [x] **Step 1: Atualizar `README.md` raiz**
 
 1. No diagrama Mermaid arquitetural:
-   - Adicionar o nó `SK_CONC_NEW["java-kotlin-concurrency<br/>(Java 25 & Kotlin 2.4)"]`.
+    - Adicionar o nó `SK_CONC_NEW["java-kotlin-concurrency<br/>(Java 25 & Kotlin 2.4)"]`.
 2. Na tabela de habilidades do agente:
-   - Destacar `java-kotlin-concurrency` como a autoridade moderna em concorrência JVM (Loom, Coroutines, ScopedValue, Mutex, Flow).
+    - Destacar `java-kotlin-concurrency` como a autoridade moderna em concorrência JVM (Loom, Coroutines, ScopedValue,
+      Mutex, Flow).
 3. Na seção técnica detalhada:
-   - Adicionar subseção explicando a skill `java-kotlin-concurrency`, seus 9 guias temáticos em `references/` e os scripts de varredura `scan-concurrency.sh` e `scan-concurrency.ps1`.
+    - Adicionar subseção explicando a skill `java-kotlin-concurrency`, seus 9 guias temáticos em `references/` e os
+      scripts de varredura `scan-concurrency.sh` e `scan-concurrency.ps1`.
 
 - [x] **Step 2: Executar validação completa do agente**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\validate-plugin.ps1
 ```
+
 Expected: Todas as skills (inclusive `java-kotlin-concurrency`) validadas com sucesso e exit code 0.
 
 - [x] **Step 3: Testar varredura de concorrência e segurança**
 
 Executar:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-security-audit\scripts\quick_scan.ps1 skills -FailOn nunca
 powershell -NoProfile -ExecutionPolicy Bypass -File skills\java-kotlin-concurrency\scripts\scan-concurrency.ps1 skills
 ```
+
 Expected: Ambos os scripts executam com sucesso.
 
 - [x] **Step 4: Commit final de documentação e fechamento**
@@ -405,7 +456,11 @@ git commit -m "docs: finalize integration of java-kotlin-concurrency skill in ro
 
 ## Self-Review Checklist
 
-- **Spec Coverage:** A nova skill `java-kotlin-concurrency` está registrada em todos os manifestos JSON (`plugin.json`, `.claude-plugin/`, `.gemini-plugin/`, `.codex-plugin/`, `.grok-plugin/`), em `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `README.md` e nos scripts de validação (`validate-plugin.*`).
+- **Spec Coverage:** A nova skill `java-kotlin-concurrency` está registrada em todos os manifestos JSON (`plugin.json`,
+  `.claude-plugin/`, `.gemini-plugin/`, `.codex-plugin/`, `.grok-plugin/`), em `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
+  `README.md` e nos scripts de validação (`validate-plugin.*`).
 - **No Placeholders:** Todos os comandos, snippets de PowerShell, JSON e Markdown contêm código exato.
-- **Cross-Platform:** Script `scan-concurrency.ps1` criado para dar suporte nativo a desenvolvedores no Windows, mantendo paridade com `scan-concurrency.sh`.
-- **Cross-References:** Todos os links cruzados nas demais skills (`clean-code`, `design-patterns`, `solid-principles`) foram atualizados para apontar para `java-kotlin-concurrency`.
+- **Cross-Platform:** Script `scan-concurrency.ps1` criado para dar suporte nativo a desenvolvedores no Windows,
+  mantendo paridade com `scan-concurrency.sh`.
+- **Cross-References:** Todos os links cruzados nas demais skills (`clean-code`, `design-patterns`, `solid-principles`)
+  foram atualizados para apontar para `java-kotlin-concurrency`.

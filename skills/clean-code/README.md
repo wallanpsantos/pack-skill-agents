@@ -82,7 +82,8 @@ DRY, KISS, YAGNI, Boy Scout Rule, convenções de nomenclatura expressivas, desi
   tiver acoplamento excessivo ou necessitar de inversão de dependência (DIP).
 - **[Design Patterns](../design-patterns/SKILL.md)**: Aplique quando lógicas condicionais complexas demandarem Strategy,
   Factory Method, State, ou criação fluente com Builder.
-- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin
+  Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Aplique ao validar regras de
   segurança, sanitização contra injeção (SQLi/XSS/SSRF) e proteção de dados confidenciais (OWASP Top 10:2025).
 

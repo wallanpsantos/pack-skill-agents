@@ -31,8 +31,13 @@ Este agente possui habilidades embutidas que devem ser invocadas sob demanda:
 
 ### 2. `java-kotlin-concurrency` (`skills/java-kotlin-concurrency/SKILL.md`)
 
-- **Quando ativar:** Revisão e implementação de concorrência e paralelismo em Java 25 LTS e Kotlin 2.4+ (alvo JVM de servidor), análise de thread safety, race conditions, deadlocks, Virtual Threads (Project Loom), carrier thread pinning, `ScopedValue`, `CompletableFuture`, Spring `@Async`, `ForkJoinPool`, `parallelStream`, Kotlin Coroutines, funções `suspend`, Structured Concurrency, `Dispatchers`, `Flow`, `Mutex`, integridade de estado financeiro sob acesso concorrente e deployment cloud-native.
-- **Ação:** Siga o checklist de concorrência em `skills/java-kotlin-concurrency/SKILL.md` e execute a varredura estática de hotspots com `scripts/scan-concurrency.sh` ou `scripts/scan-concurrency.ps1`.
+- **Quando ativar:** Revisão e implementação de concorrência e paralelismo em Java 25 LTS e Kotlin 2.4+ (alvo JVM de
+  servidor), análise de thread safety, race conditions, deadlocks, Virtual Threads (Project Loom), carrier thread
+  pinning, `ScopedValue`, `CompletableFuture`, Spring `@Async`, `ForkJoinPool`, `parallelStream`, Kotlin Coroutines,
+  funções `suspend`, Structured Concurrency, `Dispatchers`, `Flow`, `Mutex`, integridade de estado financeiro sob acesso
+  concorrente e deployment cloud-native.
+- **Ação:** Siga o checklist de concorrência em `skills/java-kotlin-concurrency/SKILL.md` e execute a varredura estática
+  de hotspots com `scripts/scan-concurrency.sh` ou `scripts/scan-concurrency.ps1`.
 
 ### 3. `concurrency-java21-review` (`skills/concurrency-java21-review/SKILL.md`)
 

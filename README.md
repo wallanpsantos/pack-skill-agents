@@ -243,7 +243,8 @@ Aponte o Codex Agent CLI ou ambiente Codex para a raiz do repositório:
 codex --profile .codex-plugin/plugin.json
 ```
 
-As habilidades `java-kotlin-security-audit`, `java-kotlin-concurrency`, `concurrency-java21-review`, `clean-code`, `design-patterns` e
+As habilidades `java-kotlin-security-audit`, `java-kotlin-concurrency`, `concurrency-java21-review`, `clean-code`,
+`design-patterns` e
 `solid-principles` serão registradas no catálogo de ferramentas do Codex.
 
 ---
@@ -269,14 +270,14 @@ O pacote fornece seis habilidades centrais de alta especialização técnica par
 
 ### Matriz Geral de Habilidades
 
-| Habilidade                         | Contrato Canônico                                                                   | Foco Principal                                                                                      | Gatilhos de Ativação                                                               | Baseline Tecnológico                       |
-|:-----------------------------------|:------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------|:-------------------------------------------|
-| **Auditoria de Segurança**         | [`skills/java-kotlin-security-audit`](./skills/java-kotlin-security-audit/SKILL.md) | OWASP Top 10:2025, ASVS 5.0, BOLA/BFLA, SSRF, PQC (FIPS 203/204)                                    | Auditorias pré-produção, pentests, análise de injeção, conformidade OWASP          | Java 25 / Kotlin 2.4 / Spring Security 7.1 |
+| Habilidade                         | Contrato Canônico                                                                   | Foco Principal                                                                                                      | Gatilhos de Ativação                                                              | Baseline Tecnológico                         |
+|:-----------------------------------|:------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------|:---------------------------------------------|
+| **Auditoria de Segurança**         | [`skills/java-kotlin-security-audit`](./skills/java-kotlin-security-audit/SKILL.md) | OWASP Top 10:2025, ASVS 5.0, BOLA/BFLA, SSRF, PQC (FIPS 203/204)                                                    | Auditorias pré-produção, pentests, análise de injeção, conformidade OWASP         | Java 25 / Kotlin 2.4 / Spring Security 7.1   |
 | **Concorrência e Paralelismo JVM** | [`skills/java-kotlin-concurrency`](./skills/java-kotlin-concurrency/SKILL.md)       | Virtual Threads (Java 25), Kotlin Coroutines 2.4, ScopedValue, carrier pinning, Mutex, Flow, integridade financeira | Revisão/implementação de concorrência, Loom, coroutines, thread safety, deadlocks | Java 25 LTS / Kotlin 2.4 / Spring Boot 4.1.1 |
-| **Migração Concorrência Java 21**  | [`skills/concurrency-java21-review`](./skills/concurrency-java21-review/SKILL.md)   | Auditoria e migração de bases legadas Java 21 para Virtual Threads e análise retroativa             | Migração Loom de Java 21, auditoria retroativa, thread safety em bases legadas     | Java 21 LTS                                |
-| **Clean Code**                     | [`skills/clean-code`](./skills/clean-code/SKILL.md)                                 | DRY, KISS, YAGNI, complexidade ciclomática, convenções de nomenclatura e code smells                | Limpeza e refatoração de código, simplificação de métodos, legibilidade            | Java 25 LTS / Kotlin 2.4+                  |
-| **Padrões de Projeto**             | [`skills/design-patterns`](./skills/design-patterns/SKILL.md)                       | Padrões GoF (Criacionais, Estruturais, Comportamentais) e cálculo monetário seguro                  | Implementação de patterns, arquitetura de classes, precisão com `BigDecimal`       | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1   |
-| **Princípios SOLID**               | [`skills/solid-principles`](./skills/solid-principles/SKILL.md)                     | SRP, OCP, LSP, ISP, DIP com tipagem estática moderna (`sealed`, `record`)                           | Design e modularização de classes, desacoplamento, refatoração estrutural          | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1   |
+| **Migração Concorrência Java 21**  | [`skills/concurrency-java21-review`](./skills/concurrency-java21-review/SKILL.md)   | Auditoria e migração de bases legadas Java 21 para Virtual Threads e análise retroativa                             | Migração Loom de Java 21, auditoria retroativa, thread safety em bases legadas    | Java 21 LTS                                  |
+| **Clean Code**                     | [`skills/clean-code`](./skills/clean-code/SKILL.md)                                 | DRY, KISS, YAGNI, complexidade ciclomática, convenções de nomenclatura e code smells                                | Limpeza e refatoração de código, simplificação de métodos, legibilidade           | Java 25 LTS / Kotlin 2.4+                    |
+| **Padrões de Projeto**             | [`skills/design-patterns`](./skills/design-patterns/SKILL.md)                       | Padrões GoF (Criacionais, Estruturais, Comportamentais) e cálculo monetário seguro                                  | Implementação de patterns, arquitetura de classes, precisão com `BigDecimal`      | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1     |
+| **Princípios SOLID**               | [`skills/solid-principles`](./skills/solid-principles/SKILL.md)                     | SRP, OCP, LSP, ISP, DIP com tipagem estática moderna (`sealed`, `record`)                                           | Design e modularização de classes, desacoplamento, refatoração estrutural         | Java 25 / Kotlin 2.4 / Spring Boot 4.1.1     |
 
 ---
 
@@ -324,26 +325,54 @@ bash ./skills/java-kotlin-security-audit/scripts/quick_scan.sh /caminho/do/meu-b
 Documentação detalhada: [`skills/java-kotlin-concurrency/SKILL.md`](./skills/java-kotlin-concurrency/SKILL.md)
 
 - **Escopo e Cobertura:**
-    - **Java 25 Virtual Threads & Project Loom:** Modelo unificado de concorrência para I/O-bound e CPU-bound workloads. Detecção e eliminação de carrier thread pinning (substituição de blocos `synchronized` em caminhos I/O bloqueantes por `ReentrantLock` com `try/finally`). Prevenção de thread exhaustion, dimensionamento ótimo de pools downstream (JDBC HikariCP, HTTP clients, message brokers) e eliminação da flag removida `jdk.tracePinnedThreads`.
-    - **Scoped Values (`ScopedValue`):** Alternativa moderna, segura e imutável ao `ThreadLocal` para propagação de contexto em Virtual Threads, evitando vazamentos de memória e overhead de herança de thread context. Rejeição explícita de APIs preview (`StructuredTaskScope`, `--enable-preview`).
-    - **Kotlin Coroutines 2.4+ (JVM de Servidor):** Concorrência estruturada no alvo JVM, despacho não-bloqueante (`Dispatchers.IO`, `Dispatchers.Default`), uso seguro de `Mutex` (nunca sob Virtual Threads com I/O bloqueante) e streams reativos assíncronos com `Flow`, `StateFlow` e `SharedFlow`. Banimento estrito de `GlobalScope`, `runBlocking` no hot-path de requisições e APIs experimentais sem justificativa formal.
-    - **Consistência Financeira & Race Conditions:** Proteção rigorosa de mutações de saldo e estado financeiro concorrente. Uso mandatório de `BigDecimal` com escala e arredondamento explícitos (`RoundingMode.HALF_EVEN` / `HALF_UP`), banimento de `float`/`double`, proibição de operadores de divisão (`/`) em Kotlin sem `MathContext` explícito, e controle de concorrência com optimistic locking (`@Version`) e travas atômicas/pessimistas.
-    - **Concorrência Assíncrona & Resiliência:** Auditoria de `CompletableFuture` (tratamento defensivo com `.exceptionally()` / `.handle()`, propagação de tracing e timeouts obrigatórios com `orTimeout()`), Spring `@Async` com executors dedicados e limites estritos, e backpressure com `Semaphore` e rate limiters.
+    - **Java 25 Virtual Threads & Project Loom:** Modelo unificado de concorrência para I/O-bound e CPU-bound workloads.
+      Detecção e eliminação de carrier thread pinning (substituição de blocos `synchronized` em caminhos I/O bloqueantes
+      por `ReentrantLock` com `try/finally`). Prevenção de thread exhaustion, dimensionamento ótimo de pools downstream
+      (JDBC HikariCP, HTTP clients, message brokers) e eliminação da flag removida `jdk.tracePinnedThreads`.
+    - **Scoped Values (`ScopedValue`):** Alternativa moderna, segura e imutável ao `ThreadLocal` para propagação de
+      contexto em Virtual Threads, evitando vazamentos de memória e overhead de herança de thread context. Rejeição
+      explícita de APIs preview (`StructuredTaskScope`, `--enable-preview`).
+    - **Kotlin Coroutines 2.4+ (JVM de Servidor):** Concorrência estruturada no alvo JVM, despacho não-bloqueante
+      (`Dispatchers.IO`, `Dispatchers.Default`), uso seguro de `Mutex` (nunca sob Virtual Threads com I/O bloqueante) e
+      streams reativos assíncronos com `Flow`, `StateFlow` e `SharedFlow`. Banimento estrito de `GlobalScope`,
+      `runBlocking` no hot-path de requisições e APIs experimentais sem justificativa formal.
+    - **Consistência Financeira & Race Conditions:** Proteção rigorosa de mutações de saldo e estado financeiro
+      concorrente. Uso mandatório de `BigDecimal` com escala e arredondamento explícitos (`RoundingMode.HALF_EVEN` /
+      `HALF_UP`), banimento de `float`/`double`, proibição de operadores de divisão (`/`) em Kotlin sem `MathContext`
+      explícito, e controle de concorrência com optimistic locking (`@Version`) e travas atômicas/pessimistas.
+    - **Concorrência Assíncrona & Resiliência:** Auditoria de `CompletableFuture` (tratamento defensivo com
+      `.exceptionally()` / `.handle()`, propagação de tracing e timeouts obrigatórios com `orTimeout()`), Spring
+      `@Async` com executors dedicados e limites estritos, e backpressure com `Semaphore` e rate limiters.
 - **Guias Técnicos Aprofundados (`references/`):**
-    A skill disponibiliza 9 guias temáticos carregados sob demanda com prescrições normativas:
-    1. [`references/virtual-threads.md`](./skills/java-kotlin-concurrency/references/virtual-threads.md): Virtual Threads no Java 25, eliminação de pinning, dimensionamento de pools e I/O não-bloqueante.
-    2. [`references/virtual-threads-vs-completable-future.md`](./skills/java-kotlin-concurrency/references/virtual-threads-vs-completable-future.md): Comparativo arquitetural entre Virtual Threads, `CompletableFuture`, reativo (WebFlux) e ForkJoinPool.
-    3. [`references/completable-future.md`](./skills/java-kotlin-concurrency/references/completable-future.md): Boas práticas com `CompletableFuture`, encadeamento assíncrono, timeouts e tratamento de falhas.
-    4. [`references/spring-async.md`](./skills/java-kotlin-concurrency/references/spring-async.md): Spring `@Async`, propagação de `SecurityContext`, configuração de executors e integração com Virtual Threads.
-    5. [`references/parallelism.md`](./skills/java-kotlin-concurrency/references/parallelism.md): Paralelismo CPU-bound, dimensionamento de `ForkJoinPool`, `parallelStream` consciente e isolamento de carga.
-    6. [`references/kotlin-coroutines.md`](./skills/java-kotlin-concurrency/references/kotlin-coroutines.md): Kotlin 2.4 Coroutines na JVM, Structured Concurrency, `Dispatchers`, `Mutex`, `Flow` e interop com Java/VTs.
-    7. [`references/financial-consistency.md`](./skills/java-kotlin-concurrency/references/financial-consistency.md): Integridade de saldo financeiro, `BigDecimal`, precisão monetária, locks atômicos e idempotência.
-    8. [`references/classic-issues.md`](./skills/java-kotlin-concurrency/references/classic-issues.md): Diagnóstico e mitigação de race conditions, deadlocks, visibilidade de memória, `volatile` e `ConcurrentHashMap`.
-    9. [`references/cloud-native-concurrency.md`](./skills/java-kotlin-concurrency/references/cloud-native-concurrency.md): Implantação cloud-native em Kubernetes, GraalVM native image, limites de CPU/cgroups, file descriptors e JFR profiling.
+  A skill disponibiliza 9 guias temáticos carregados sob demanda com prescrições normativas:
+    1. [`references/virtual-threads.md`](./skills/java-kotlin-concurrency/references/virtual-threads.md): Virtual
+       Threads no Java 25, eliminação de pinning, dimensionamento de pools e I/O não-bloqueante.
+    2. [
+       `references/virtual-threads-vs-completable-future.md`](./skills/java-kotlin-concurrency/references/virtual-threads-vs-completable-future.md):
+       Comparativo arquitetural entre Virtual Threads, `CompletableFuture`, reativo (WebFlux) e ForkJoinPool.
+    3. [`references/completable-future.md`](./skills/java-kotlin-concurrency/references/completable-future.md): Boas
+       práticas com `CompletableFuture`, encadeamento assíncrono, timeouts e tratamento de falhas.
+    4. [`references/spring-async.md`](./skills/java-kotlin-concurrency/references/spring-async.md): Spring `@Async`,
+       propagação de `SecurityContext`, configuração de executors e integração com Virtual Threads.
+    5. [`references/parallelism.md`](./skills/java-kotlin-concurrency/references/parallelism.md): Paralelismo CPU-bound,
+       dimensionamento de `ForkJoinPool`, `parallelStream` consciente e isolamento de carga.
+    6. [`references/kotlin-coroutines.md`](./skills/java-kotlin-concurrency/references/kotlin-coroutines.md): Kotlin 2.4
+       Coroutines na JVM, Structured Concurrency, `Dispatchers`, `Mutex`, `Flow` e interop com Java/VTs.
+    7. [`references/financial-consistency.md`](./skills/java-kotlin-concurrency/references/financial-consistency.md):
+       Integridade de saldo financeiro, `BigDecimal`, precisão monetária, locks atômicos e idempotência.
+    8. [`references/classic-issues.md`](./skills/java-kotlin-concurrency/references/classic-issues.md): Diagnóstico e
+       mitigação de race conditions, deadlocks, visibilidade de memória, `volatile` e `ConcurrentHashMap`.
+    9. [
+       `references/cloud-native-concurrency.md`](./skills/java-kotlin-concurrency/references/cloud-native-concurrency.md):
+       Implantação cloud-native em Kubernetes, GraalVM native image, limites de CPU/cgroups, file descriptors e JFR
+       profiling.
 - **Scripts de Varredura de Concorrência (`scan-concurrency`):**
-    Varredura estática profunda com detecção de APIs preview, thread pinning, locks sem try/finally, ScopedValue, CompletableFuture sem timeout, uso de GlobalScope/runBlocking em Kotlin e divisões de BigDecimal inseguras:
-    - PowerShell (Windows / pwsh 7+): [`skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`](./skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1)
-    - Bash (Linux / macOS / Git Bash): [`skills/java-kotlin-concurrency/scripts/scan-concurrency.sh`](./skills/java-kotlin-concurrency/scripts/scan-concurrency.sh)
+  Varredura estática profunda com detecção de APIs preview, thread pinning, locks sem try/finally, ScopedValue,
+  CompletableFuture sem timeout, uso de GlobalScope/runBlocking em Kotlin e divisões de BigDecimal inseguras:
+    - PowerShell (Windows / pwsh 7+): [
+      `skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1`](./skills/java-kotlin-concurrency/scripts/scan-concurrency.ps1)
+    - Bash (Linux / macOS / Git Bash): [
+      `skills/java-kotlin-concurrency/scripts/scan-concurrency.sh`](./skills/java-kotlin-concurrency/scripts/scan-concurrency.sh)
 
 #### Como Executar a Varredura de Concorrência:
 

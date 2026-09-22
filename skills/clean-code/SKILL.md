@@ -836,7 +836,8 @@ skills especializadas:
   Responsabilidade Única (SRP), possuir alto acoplamento, ou necessitar de Inversão de Dependência (DIP).
 - **[Design Patterns](../design-patterns/SKILL.md)**: Ative quando blocos condicionais complexos exigirem substituição
   por Strategy, Factory Method, State, ou quando a construção de objetos complexos demandar Builder ou Fluent DSL.
-- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin
+  Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Ative quando o código envolver
   sanitização de entrada de usuários, prevenção contra SQLi/XSS/SSRF, criptografia ou manuseio de dados sensíveis e
   credenciais (OWASP Top 10:2025).

@@ -190,7 +190,8 @@ java -XX:StartFlightRecording=name=production,\
   events are dropped.
 
 > **Critical Warning:** Running continuous JFR in containers with `maxage` but **without `maxsize`** can cause
-> unrestricted disk or off-heap memory growth during activity bursts, triggering cgroup container OOM-kills (`OOMKilled`)
+> unrestricted disk or off-heap memory growth during activity bursts, triggering cgroup container OOM-kills
+> (`OOMKilled`)
 > (Evans et al., 2024, Ch. 12). Always specify `maxsize`.
 
 Key JFR events for VT workloads:

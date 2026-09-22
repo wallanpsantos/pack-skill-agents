@@ -10,7 +10,8 @@ param(
     [string]$TargetDir = "."
 )
 
-if (-not (Test-Path -Path $TargetDir -PathType Container)) {
+if (-not (Test-Path -Path $TargetDir -PathType Container))
+{
     Write-Error "Not a directory: $TargetDir"
     exit 1
 }
@@ -24,34 +25,40 @@ $allFiles = Get-ChildItem -Path $targetPath -Recurse -File -ErrorAction Silently
     $_.FullName -notmatch '[\\/](\.git|\.gradle|\.idea|target|build|out|\.superpowers)([\\/]|$)'
 }
 $javaFiles = @($allFiles | Where-Object { $_.Extension -eq '.java' })
-$ktFiles   = @($allFiles | Where-Object { $_.Extension -eq '.kt' })
+$ktFiles = @($allFiles | Where-Object { $_.Extension -eq '.kt' })
 
-function Run-Check {
+function Run-Check
+{
     param(
         [string]$Title,
         [System.IO.FileInfo[]]$Files,
         [string]$Pattern
     )
     Write-Output "--- $Title ---"
-    if (-not $Files -or $Files.Count -eq 0) {
+    if (-not $Files -or $Files.Count -eq 0)
+    {
         Write-Output "(no hits)"
         Write-Output ""
         return
     }
 
     $hits = 0
-    :fileLoop foreach ($f in $Files) {
+    :fileLoop foreach ($f in $Files)
+    {
         $matches = Select-String -Path $f.FullName -Pattern $Pattern -ErrorAction SilentlyContinue
-        foreach ($m in $matches) {
+        foreach ($m in $matches)
+        {
             $hits++
-            Write-Output "$($m.Path):$($m.LineNumber):$($m.Line.Trim())"
-            if ($hits -ge 80) {
+            Write-Output "$( $m.Path ):$( $m.LineNumber ):$($m.Line.Trim() )"
+            if ($hits -ge 80)
+            {
                 break fileLoop
             }
         }
     }
 
-    if ($hits -eq 0) {
+    if ($hits -eq 0)
+    {
         Write-Output "(no hits)"
     }
     Write-Output ""

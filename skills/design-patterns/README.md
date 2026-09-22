@@ -99,7 +99,8 @@ Principais armadilhas a evitar:
   justificam o uso de cada padrão GoF.
 - **[Clean Code](../clean-code/SKILL.md)**: Diretrizes de simplicidade (KISS, YAGNI, DRY), funções limpas e eliminação
   de sobre-engenharia.
-- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin
+  Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Boas práticas de segurança em
   fábricas, adaptadores e proteção de dados confidenciais (OWASP Top 10:2025).
 

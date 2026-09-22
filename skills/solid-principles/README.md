@@ -85,7 +85,8 @@ O guia aborda a transição de práticas legadas para abordagens modernas:
 - **[Clean Code](../clean-code/SKILL.md)**: Funções pequenas, Boy Scout Rule, regras DRY, KISS e YAGNI.
 - **[Design Patterns](../design-patterns/SKILL.md)**: Padrões GoF (Strategy, Factory Method, Adapter, Decorator,
   Builder) implementados na JVM moderna.
-- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
+- **[Concorrência e Paralelismo JVM](../java-kotlin-concurrency/SKILL.md)**: Virtual Threads (Java 25), Kotlin
+  Coroutines (2.4+), carrier pinning, ScopedValue e concorrência estruturada sem anti-patterns.
 - **[Auditoria de Segurança Java/Kotlin](../java-kotlin-security-audit/SKILL.md)**: Práticas de validação defensiva e
   integridade estrutural contra OWASP Top 10:2025.
 
