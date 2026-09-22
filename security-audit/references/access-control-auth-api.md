@@ -1,290 +1,388 @@
-# Controle de Acesso, Autenticação e API Security (A01/A07:2025)
+# Controle de Acesso, Autenticação e Segurança de APIs (A01/A07:2025, API Top 10:2023)
 
-Cobre CSRF, autenticação/autorização (senhas, BOLA/IDOR, JWT, rate limiting) e boas práticas de exposição de API REST.
-Válido para Spring Boot, Quarkus, Jakarta EE e Java puro.
-
-## Conteúdo
-- CSRF Protection
-  - Spring Security
-  - Quarkus
-  - CORS vs CSRF: Common Misconceptions
-- Authentication & Authorization
-  - Password Storage
-  - Authorization — Proteção contra BOLA/IDOR
-  - Spring Security Annotations
-  - JWT Security — OAuth2 Resource Server
-  - Rate Limiting & Brute Force Protection
-- API Security (REST)
-  - OpenAPI/Swagger — Não Expor Schemas Sensíveis
-  - Proteção BOLA/IDOR
-  - Validação de JWT com Resource Server
+Este guia cobre a configuração estrita de controle de acesso, autenticação e mitigação de vulnerabilidades de API em
+**Java 25 LTS** e **Kotlin 2.4+** com **Spring Boot 4.1.1+** (Spring Framework 7 e Spring Security 7.1), além de
+princípios válidos para Quarkus e Jakarta EE.
 
 ---
 
-## CSRF Protection
+## Índice
 
-### Spring Security
-
-```java
-
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-            // REST APIs com JWT (stateless) — pode desabilitar
-            .csrf(csrf -> csrf.disable())
-
-            // Browser apps com sessão — manter CSRF habilitado
-            .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            );
-    return http.build();
-}
-```
-
-> Warning: Only disable CSRF if the API is 100% stateless (no session cookies) and authentication is performed via
-> `Authorization: Bearer`. If there is any cookie-based workflow, keep CSRF enabled.
-
-### Quarkus
-
-```properties
-quarkus.http.csrf.enabled=true
-quarkus.http.csrf.cookie-name=XSRF-TOKEN
-```
-
-### CORS vs CSRF: Common Misconceptions (A02/A01:2025)
-
-| Mecanismo | Lado      | Protege contra                          | Observação                              |
-|-----------|-----------|-----------------------------------------|-----------------------------------------|
-| CORS      | Navegador | Leitura cross-origin de respostas       | Não é proteção server-side de segurança |
-| CSRF      | Servidor  | Requisições forjadas em nome do usuário | Requer token ou SameSite cookies        |
-
-> [!IMPORTANT]
-> Configurar `Access-Control-Allow-Origin: *` com `Access-Control-Allow-Credentials: true` é crítico — permite que
-qualquer origem leia dados autenticados do usuário. Sempre especifique domínios explícitos.
+1. [Configuração de Cadeias de Filtro (SecurityFilterChain e SecurityWebFilterChain)](#1-configuração-de-cadeias-de-filtro)
+2. [Autorização em Múltiplas Camadas (URL, Método, Objeto e Propriedade)](#2-autorização-em-múltiplas-camadas)
+3. [Prevenção contra BOLA / IDOR e Multi-Tenancy](#3-prevenção-contra-bola--idor-e-multi-tenancy)
+4. [Tokens, JWT, OAuth2 e OIDC (Resource Server)](#4-tokens-jwt-oauth2-e-oidc-resource-server)
+5. [Armazenamento de Senhas e Credenciais](#5-armazenamento-de-senhas-e-credenciais)
+6. [CSRF, CORS, Sessões e Cookies Seguros](#6-csrf-cors-sessões-e-cookies-seguros)
+7. [Prevenção de Open Redirects](#7-prevenção-de-open-redirects)
+8. [Rate Limiting, Idempotência e Abuso de Fluxo de Negócio](#8-rate-limiting-idempotência-e-abuso-de-fluxo-de-negócio)
+9. [Inventário de APIs e Proteção contra Shadow APIs](#9-inventário-de-apis-e-proteção-contra-shadow-apis)
 
 ---
 
-## Authentication & Authorization (A07:2025)
+## 1. Configuração de Cadeias de Filtro
 
-### Password Storage
+No Spring Security 7.1+, a configuração de segurança é declarada através de beans `SecurityFilterChain` (Spring MVC) ou
+`SecurityWebFilterChain` (Spring WebFlux).
 
-```java
-// ✅ GOOD: DelegatingPasswordEncoder (Spring Security — recomendado)
-PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
-String hash = encoder.encode(rawPassword);
+### Princípio do Deny-by-Default
 
-// Argon2 direto (para novos projetos)
-PasswordEncoder encoder = new Argon2PasswordEncoder(16, 32, 1, 65536, 10);
-
-// ❌ BAD: MD5, SHA1, SHA256 sem salt — NUNCA para senhas!
-```
-
-### Authorization — Proteção contra BOLA/IDOR
+Toda cadeia de segurança deve adotar o princípio do menor privilégio: **bloquear ou exigir autenticação por padrão para
+qualquer requisição que não esteja explicitamente liberada**.
 
 ```java
-// ✅ GOOD: Verificação de ownership no service layer (protege contra BOLA/IDOR)
-@Service
-public class DocumentService {
-
-    public Document getDocument(Long documentId, User currentUser) {
-        Document doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new NotFoundException("Document not found"));
-
-        // Checa se o recurso pertence ao usuário autenticado
-        if (!doc.getOwnerId().equals(currentUser.getId()) &&
-                !currentUser.hasRole("ADMIN")) {
-            throw new AccessDeniedException("Not authorized");
-        }
-        return doc;
-    }
-}
-
-// ❌ BAD: Apenas verificação no controller — confia no ID do usuário
-@GetMapping("/documents/{id}")
-public Document getDocument(@PathVariable Long id) {
-    return documentRepository.findById(id).orElseThrow(); // Sem auth check!
-}
-```
-
-### Spring Security Annotations
-
-```java
-
-@PreAuthorize("hasRole('ADMIN')")
-public void adminOnly() {
-}
-
-@PreAuthorize("hasRole('USER') and #userId == authentication.principal.id")
-public void ownDataOnly(Long userId) {
-}
-
-// Quarkus
-@RolesAllowed("ADMIN")
-public void adminOnly() {
-}
-
-@RolesAllowed({"USER", "MODERATOR"})
-public void restrictedOp() {
-}
-```
-
-### JWT Security — OAuth2 Resource Server (Spring Boot 4.1+)
-
-```java
-// ✅ GOOD: spring-boot-starter-oauth2-resource-server (recomendado)
-// Configura validação de JWT automaticamente (iss, aud, exp, alg)
-
-// application.yml
-spring:
-security:
-oauth2:
-resourceserver:
-jwt:
-issuer-uri:https://auth.mycompany.com
-audiences:my-api
-
-// ❌ BAD: Parser sem fixar algoritmo (aceita "none")
-Jwts.
-
-parserBuilder().
-
-build().
-
-parseClaimsJws(token);
-
-// ✅ GOOD: Parser fixando algoritmo e claims obrigatórias
-Jwts.
-
-parserBuilder()
-    .
-
-setSigningKey(signingKey)
-    .
-
-requireIssuer("https://auth.mycompany.com")
-    .
-
-requireAudience("my-api")
-    .
-
-build()
-    .
-
-parseClaimsJws(token);
-```
-
-### Rate Limiting & Brute Force Protection
-
-Além do Bucket4j (application-level), considere também:
-
-- **Spring Cloud Gateway Rate Limiter** — para cenários de API Gateway
-- **Resilience4j RateLimiter** — integrado com Spring Boot Actuator e observability
-
-```xml
-
-<properties>
-    <bucket4j.version>8.19.0</bucket4j.version>
-</properties>
-
-<dependency>
-<groupId>com.bucket4j</groupId>
-<artifactId>bucket4j_jdk17-core</artifactId>
-<version>${bucket4j.version}</version>
-</dependency>
-```
-
-```java
-
-@Component
-public class RateLimitingFilter extends OncePerRequestFilter {
-
-    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
-
-    private Bucket createNewBucket() {
-        return Bucket.builder()
-                .addLimit(Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1))))
-                .build();
-    }
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        var clientIp = request.getRemoteAddr();
-        var bucket = cache.computeIfAbsent(clientIp, k -> createNewBucket());
-
-        if (bucket.tryConsume(1)) {
-            filterChain.doFilter(request, response);
-        } else {
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setHeader("Retry-After", "60");
-            response.getWriter().write("""
-                    {
-                        "status": 429,
-                        "error": "Too Many Requests",
-                        "message": "Rate limit exceeded. Try again in 60 seconds."
-                    }
-                    """);
-        }
-    }
-}
-```
-
-> [!WARNING]
-> No componente `RateLimitingFilter`, a instrução `var clientIp = request.getRemoteAddr();` assume que a aplicação
-recebe tráfego direto do cliente. Em ambientes reais de Cloud/Kubernetes, o `getRemoteAddr()` frequentemente retornará o
-IP do Load Balancer, Ingress Controller ou Proxy Reverso, correndo o risco de bloquear todo o tráfego legítimo em caso
-de ataque.
->
-> **Recomendação para Produção:**
-> 1. Extraia o IP real do cliente a partir do cabeçalho HTTP `X-Forwarded-For` (garantindo que sua aplicação esteja
-     configurada para aceitar apenas proxies confiáveis, evitando spoofing desse header).
-> 2. Se a rota for autenticada, utilize o identificador exclusivo do usuário extraído do próprio token JWT (ex: `sub` ou
-     `username`) como chave no cache do limitador.
-
-
----
-
-## API Security (REST)
-
-### OpenAPI/Swagger — Não Expor Schemas Sensíveis
-
-```java
-// ✅ GOOD: Ocultar campos sensíveis no schema OpenAPI
-public class UserResponse {
-
-    public String username;
-
-    @Schema(hidden = true) // Não expõe no Swagger UI
-    public String internalId;
-
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // Aceita na entrada, nunca serializa na saída
-    public String password;
-}
-
-// ✅ GOOD: Desabilitar Swagger em produção
-@ConditionalOnExpression("${springdoc.swagger-ui.enabled:false}")
+// ✅ GOOD: Spring MVC com Spring Security 7.1 — Deny-by-default estrito
 @Configuration
-public class OpenApiConfig { ...
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .securityMatcher("/**")
+            .authorizeHttpRequests(auth -> auth
+                // Rotas estritamente públicas (expostas propositalmente)
+                .requestMatchers(HttpMethod.GET, "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
+                .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/v1/webhooks/payments").permitAll() // Validado por assinatura HMAC
+                // Rotas administrativas exigindo role específica
+                .requestMatchers("/admin/**", "/actuator/**").hasRole("ADMIN")
+                // Qualquer outra requisição exige autenticação obrigatória
+                .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(customJwtAuthenticationConverter()))
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // CSRF desabilitado apenas porque a API é 100% stateless via Bearer Token (sem cookies)
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                .frameOptions(frame -> frame.deny())
+                .httpStrictTransportSecurity(hsts -> hsts.maxAgeInSeconds(31536000).includeSubDomains(true))
+                .contentTypeOptions(Customizer.withDefaults())
+            )
+            .build();
+    }
 }
 ```
+
+Para **Spring WebFlux (reativo com coroutines)**:
+
+```kotlin
+// ✅ GOOD: WebFlux SecurityWebFilterChain
+@Configuration
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+class ReactiveSecurityConfig {
+
+    @Bean
+    fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+        return http
+            .authorizeExchange { exchanges ->
+                exchanges
+                    .pathMatchers(HttpMethod.GET, "/health").permitAll()
+                    .pathMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
+                    .anyExchange().authenticated()
+            }
+            .oauth2ResourceServer { it.jwt(Customizer.withDefaults()) }
+            .csrf { it.disable() }
+            .build()
+    }
+}
+```
+
+---
+
+## 2. Autorização em Múltiplas Camadas
+
+A autorização não pode depender apenas de regras na URL. Ataques do tipo **BFLA (Broken Function Level Authorization)**
+e **BOPLA (Broken Object Property Level Authorization)** exploram a falta de verificações em camadas internas.
+
+### Nível de Método (`@PreAuthorize` e `@Secured`)
+
+Ative `@EnableMethodSecurity` e utilize SpEL rigoroso:
+
+```java
+// ✅ GOOD: Autorização por método com checagem de perfil e contexto
+@Service
+public class PayoutService {
+
+    @PreAuthorize("hasRole('FINANCE_OPERATOR') and hasAuthority('SCOPE_payout:write')")
+    public PayoutResult executePayout(PayoutCommand command) {
+        // ...
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #tenantId == authentication.principal.claims['tenant_id']")
+    public List<AuditRecord> listTenantAuditLogs(String tenantId) {
+        // ...
+    }
+}
+```
+
+### Nível de Propriedade (Prevenção de Mass Assignment)
+
+Nunca exponha a entidade JPA diretamente como parâmetro de entrada (`@RequestBody`) de um controller. Um atacante pode
+enviar campos administrativos (`role`, `verified`, `balance`, `tenantId`) e sobrescrevê-los se o binding for automático.
+
+```java
+// ❌ BAD: Mass Assignment — entidade JPA exposta diretamente
+@PostMapping("/users")
+public User createUser(@RequestBody User user) {
+    return userRepository.save(user); // Atacante pode enviar "role": "ADMIN" no payload!
+}
+
+// ✅ GOOD: DTO estrito de entrada sem campos de controle
+public record CreateUserRequest(
+    @NotBlank String fullName,
+    @Email String email,
+    @NotBlank String password
+) {}
+
+@PostMapping("/users")
+public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
+    User user = new User(request.fullName(), request.email(), hashPassword(request.password()));
+    user.setRole(Role.USER); // Força perfil padrão no código
+    return UserResponse.from(userRepository.save(user));
+}
+```
+
+---
+
+## 3. Prevenção contra BOLA / IDOR e Multi-Tenancy
+
+**BOLA (Broken Object Level Authorization)** ocorre quando um usuário legítimo acessa recursos de outro usuário
+simplesmente alterando o identificador numérico ou UUID na rota (`/accounts/102` → `/accounts/103`).
+
+### Regra Fundamental
+
+Toda consulta a objeto privado **deve filtrar pelo identificador do usuário ou tenant autenticado no próprio SQL/JPQL**.
+
+```java
+// ❌ BAD: BOLA/IDOR — consulta busca apenas pelo ID recebido do cliente
+@GetMapping("/contracts/{contractId}")
+public Contract getContract(@PathVariable String contractId) {
+    return contractRepository.findById(contractId)
+        .orElseThrow(() -> new NotFoundException("Contrato não encontrado"));
+}
+
+// ✅ GOOD: Consulta garante propriedade através do principal autenticado
+@GetMapping("/contracts/{contractId}")
+public ContractResponse getContract(
+    @PathVariable String contractId,
+    @AuthenticationPrincipal Jwt principal
+) {
+    String currentUserId = principal.getSubject();
+    String tenantId = principal.getClaimAsString("tenant_id");
+
+    return contractService.getContractForUser(contractId, currentUserId, tenantId);
+}
+
+// No Repository:
+public interface ContractRepository extends JpaRepository<Contract, String> {
+    @Query("SELECT c FROM Contract c WHERE c.id = :id AND c.ownerId = :ownerId AND c.tenantId = :tenantId")
+    Optional<Contract> findByIdAndOwnerAndTenant(
+        @Param("id") String id,
+        @Param("ownerId") String ownerId,
+        @Param("tenantId") String tenantId
+    );
+}
+```
+
+---
+
+## 4. Tokens, JWT, OAuth2 e OIDC (Resource Server)
+
+Ao utilizar o `spring-boot-starter-oauth2-resource-server`, evite parsers manuais caseiros com bibliotecas genéricas de
+JWT (como `jjwt` ou `nimbus`).
+
+### Configuração Recomendada via `application.yml`
+
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.empresa.com.br/oauth2/v1
+          audiences: https://api.empresa.com.br
+          jwk-set-uri: https://auth.empresa.com.br/oauth2/v1/jwks
+```
+
+### Validações Obrigatórias de Tokens
+
+1. **Emissor (`iss`) e Audiência (`aud`):** Rejeite qualquer token cuja audiência não inclua o identificador deste
+   serviço.
+2. **Expiração (`exp`):** Exija claim de expiração obrigatória (`setAllowEmptyExpiryClaim(false)`).
+3. **Algoritmo de Assinatura Fixo:** Fixe os algoritmos aceitos (ex.: `RS256`, `ES256`). Rejeite explicitamente tokens
+   com algoritmo `none` ou chaves simétricas incompatíveis.
+4. **Clock Skew Mínimo:** Defina a tolerância de clock skew para no máximo 30 a 60 segundos (o padrão do Spring é 60
+   segundos).
+
+```java
+// ✅ GOOD: Customização de JwtDecoder com validações estritas
+@Bean
+public JwtDecoder jwtDecoder(OAuth2ResourceServerProperties properties) {
+    NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(properties.getJwt().getJwkSetUri())
+        .jwsAlgorithms(algorithms -> {
+            algorithms.add(SignatureAlgorithm.RS256);
+            algorithms.add(SignatureAlgorithm.ES256);
+        })
+        .build();
+
+    OAuth2TokenValidator<Jwt> defaultValidators = JwtValidators.createDefaultWithIssuer(properties.getJwt().getIssuerUri());
+    OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(
+        JwtClaimNames.AUD,
+        aud -> aud != null && aud.contains("https://api.empresa.com.br")
+    );
+
+    DelegatingOAuth2TokenValidator<Jwt> combinedValidator =
+        new DelegatingOAuth2TokenValidator<>(defaultValidators, audienceValidator);
+
+    jwtDecoder.setJwtValidator(combinedValidator);
+    return jwtDecoder;
+}
+```
+
+---
+
+## 5. Armazenamento de Senhas e Credenciais
+
+Nunca utilize MD5, SHA-1, SHA-256 ou qualquer algoritmo de hash rápido para armazenar senhas. Esses algoritmos foram
+projetados para integridade, não para proteção contra ataques de força bruta com GPUs.
+
+```java
+// ✅ GOOD: Argon2id via Spring Security (Recomendado para novos sistemas)
+@Bean
+public PasswordEncoder passwordEncoder() {
+    // saltLength: 16 bytes, hashLength: 32 bytes, parallelism: 1, memory: 65536 KB, iterations: 3
+    return new Argon2PasswordEncoder(16, 32, 1, 65536, 3);
+}
+
+// ✅ GOOD: DelegatingPasswordEncoder (Suporte a migração progressiva de hashes legados)
+@Bean
+public PasswordEncoder delegatingPasswordEncoder() {
+    return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+}
+```
+
+---
+
+## 6. CSRF, CORS, Sessões e Cookies Seguros
+
+### CSRF (Cross-Site Request Forgery)
+
+- **APIs REST Stateless:** Se a autenticação é realizada exclusivamente por cabeçalho HTTP
+  `Authorization: Bearer <token>` e não utiliza cookies de sessão, desabilitar CSRF é aceitável
+  (`http.csrf(csrf -> csrf.disable())`).
+- **Aplicações com Cookies/Sessão:** Se a autenticação depender de cookies de sessão (`JSESSIONID`, tokens de sessão em
+  cookies), **CSRF deve permanecer obrigatoriamente ativo**:
+  ```java
+  http.csrf(csrf -> csrf
+      .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+      .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+  );
+  ```
+
+### CORS (Cross-Origin Resource Sharing)
+
+A configuração incorreta de CORS é uma das falhas mais frequentes em ambientes corporativos.
+
+- **PROIBIDO:** `Access-Control-Allow-Origin: *` combinado com `Access-Control-Allow-Credentials: true`.
+- Origens devem ser declaradas de forma explícita e restritiva:
+
+```java
+// ✅ GOOD: CORS com origens estritas
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("https://app.empresa.com.br", "https://admin.empresa.com.br"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+    configuration.setAllowCredentials(true);
+    configuration.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
+```
+
+### Cookies Seguros
+
+Em qualquer cookie de autenticação ou sessão:
+
+- `Secure = true` (enviado exclusivamente por HTTPS).
+- `HttpOnly = true` (inacessível para scripts JavaScript no browser, mitigando XSS).
+- `SameSite = Strict` ou `Lax` (bloqueia envio em requisições cross-site de terceiros).
+
+---
+
+## 7. Prevenção de Open Redirects
+
+Ao receber parâmetros de redirecionamento (como `returnUrl`, `redirect_uri` ou `target`), nunca faça o redirecionamento
+cego para URLs informadas pelo cliente.
+
+```java
+// ❌ BAD: Open Redirect — redireciona para qualquer destino
+@GetMapping("/login/callback")
+public RedirectView redirectAfterLogin(@RequestParam String redirectUrl) {
+    return new RedirectView(redirectUrl); // Atacante envia redirectUrl=https://phishing-site.com
+}
+
+// ✅ GOOD: Validação contra allowlist estrita de domínios confiáveis
+private static final Set<String> ALLOWED_HOSTS = Set.of("app.empresa.com.br", "portal.empresa.com.br");
+
+public RedirectView safeRedirect(String redirectUrl) {
+    try {
+        URI uri = new URI(redirectUrl).normalize();
+        if (uri.getHost() == null || !ALLOWED_HOSTS.contains(uri.getHost().toLowerCase())) {
+            return new RedirectView("/dashboard"); // Fallback seguro
+        }
+        return new RedirectView(uri.toString());
+    } catch (URISyntaxException e) {
+        return new RedirectView("/dashboard");
+    }
+}
+```
+
+---
+
+## 8. Rate Limiting, Idempotência e Abuso de Fluxo de Negócio
+
+### Rate Limiting por Usuário e IP
+
+Endpoints de login, registro, geração de token, Pix, recuperação de senha e disparo de emails devem possuir limites de
+taxa severos.
+
+- No nível de API Gateway (Spring Cloud Gateway com Redis) ou via Bucket4j em microserviços.
+- Extraia o IP real via cabeçalho `X-Forwarded-For` **apenas se a aplicação estiver atrás de um proxy reverso
+  confiável**, ou use o `userId` em rotas autenticadas.
+
+### Idempotência em Transações Críticas
+
+Operações financeiras e de alteração de estado sensível devem exigir cabeçalho `Idempotency-Key` (UUIDv4) com
+persistência atômica no Redis/banco para evitar reprocessamento acidental ou race conditions causadas por múltiplos
+cliques/retries.
+
+---
+
+## 9. Inventário de APIs e Proteção contra Shadow APIs
+
+A documentação OpenAPI (Swagger UI) exposta em ambientes de produção facilita a enumeração e o mapeamento de superfície
+de ataque por agentes maliciosos.
 
 ```yaml
 # application-prod.yml
 springdoc:
-  swagger-ui:
-    enabled: false
   api-docs:
-    enabled: false
+    enabled: false # Desabilita endpoint /v3/api-docs em produção
+  swagger-ui:
+    enabled: false # Desabilita UI /swagger-ui.html em produção
 ```
 
-### Proteção BOLA/IDOR (Broken Object Level Authorization)
-
-Além de `@PreAuthorize`, implemente verificação de ownership consistentemente. Ver seção Authentication & Authorization
-acima.
-
-### Validação de JWT com Resource Server
-
-Use `spring-boot-starter-oauth2-resource-server` em vez de parsear JWT manualmente. Ver seção JWT acima.
-
+Se o Swagger precisar ser mantido acessível para desenvolvedores internos em ambientes externos, coloque a rota sob a
+proteção obrigatória de `hasRole('DEVELOPER')` ou isole o acesso via VPN.

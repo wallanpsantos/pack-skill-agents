@@ -1,118 +1,207 @@
 <#
 .SYNOPSIS
-    Pre-varredura estatica deterministica (regex) para Java/Spring/Quarkus/Jakarta EE.
+    Pre-varredura estatica deterministica dirigida por catalogo de regras (quick_scan_rules.txt).
 
 .DESCRIPTION
-    Equivalente Windows de scripts/quick_scan.sh. Mesmos padroes, mesma saida.
-    NAO substitui SAST (Semgrep/SpotBugs), revisao manual, nem os padroes GOOD/BAD
-    documentados em references/. Todo achado aqui e um candidato a ser confirmado
-    manualmente - regex nao entende contexto, entao falsos positivos sao esperados.
+    Analisa codigo-fonte Java, Kotlin, configuracoes Spring, manifestos de build,
+    workflows do GitHub Actions, Dockerfiles e YAMLs de Kubernetes.
+    Compativel com Windows PowerShell 5.1 e PowerShell 7+.
+    Somente leitura - nao modifica nenhum arquivo.
 
 .PARAMETER TargetDir
-    Diretorio a escanear recursivamente por arquivos .java.
+    Diretorio a escanear recursivamente.
+
+.PARAMETER FailOn
+    Nivel de severidade para codigo de saida 1: 'alto' (padrao), 'medio' ou 'nunca'.
 
 .EXAMPLE
-    .\quick_scan.ps1 src\main\java
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File scripts\quick_scan.ps1 src\main\java
-    (uso a partir do cmd.exe, sem precisar mudar a policy do sistema)
-
-.NOTES
-    Compativel com Windows PowerShell 5.1 (embutido no Windows) e PowerShell 7+.
-    Somente leitura - nao modifica nenhum arquivo.
+    .\quick_scan.ps1 -TargetDir src\main\java -FailOn medio
 #>
 
+[CmdletBinding()]
 param(
-    [Parameter(Position = 0)]
-    [string]$TargetDir
+    [Parameter(Position = 0, Mandatory = $false)]
+    [string]$TargetDir,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('alto', 'medio', 'nunca', IgnoreCase = $true)]
+    [string]$FailOn = 'alto'
 )
 
-if ([string]::IsNullOrWhiteSpace($TargetDir)) {
-    Write-Error "Uso: quick_scan.ps1 <diretorio-alvo>`nExemplo: quick_scan.ps1 src\main\java"
-    exit 1
+$ErrorActionPreference = 'Stop'
+
+if ( [string]::IsNullOrWhiteSpace($TargetDir))
+{
+    Write-Error "Uso: quick_scan.ps1 [-TargetDir] <diretorio> [-FailOn alto|medio|nunca]"
+    exit 2
 }
 
-if (-not (Test-Path -Path $TargetDir -PathType Container)) {
+if (-not (Test-Path -Path $TargetDir -PathType Container))
+{
     Write-Error "Erro: diretorio '$TargetDir' nao existe."
-    exit 1
+    exit 2
 }
 
-$javaFiles = Get-ChildItem -Path $TargetDir -Filter '*.java' -Recurse -File -ErrorAction SilentlyContinue
-if (-not $javaFiles -or $javaFiles.Count -eq 0) {
-    Write-Warning "Nenhum arquivo .java encontrado em '$TargetDir'. Nada para escanear."
+$rulesFile = Join-Path -Path $PSScriptRoot -ChildPath "quick_scan_rules.txt"
+if (-not (Test-Path -Path $rulesFile -PathType Leaf))
+{
+    Write-Error "Erro: catalogo de regras '$rulesFile' nao encontrado."
+    exit 2
+}
+
+$pruneDirs = @('.git', '.gradle', '.idea', '.mvn', 'node_modules', 'target', 'build', 'out')
+
+# Coleta todos os arquivos validos excluindo diretorios ignorados
+$allFiles = Get-ChildItem -Path $TargetDir -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object {
+    $itemPath = $_.FullName
+    $skip = $false
+    foreach ($d in $pruneDirs)
+    {
+        $part = [System.IO.Path]::DirectorySeparatorChar + $d + [System.IO.Path]::DirectorySeparatorChar
+        if ($itemPath.Contains($part) -or $itemPath.EndsWith([System.IO.Path]::DirectorySeparatorChar + $d))
+        {
+            $skip = $true
+            break
+        }
+    }
+    -not $skip
+}
+
+if (-not $allFiles -or $allFiles.Count -eq 0)
+{
+    Write-Output "Nenhum arquivo encontrado em '$TargetDir' para analise."
     exit 0
 }
 
-$totalHits = 0
+$totalAlto = 0
+$totalMedio = 0
+$totalInfo = 0
 
-function Invoke-Check {
-    param(
-        [string]$Label,
-        [string]$Owasp,
-        [string]$Pattern,
-        [System.IO.FileInfo[]]$Files
-    )
+Write-Output ("# Quick Scan - " + $TargetDir)
+Write-Output ("# Catalogo: " + $rulesFile)
+Write-Output ("# Nivel de falha (-FailOn): " + $FailOn)
+Write-Output ""
 
-    $matches = $Files | Select-String -Pattern $Pattern -AllMatches
-    if ($matches) {
-        Write-Output ""
-        Write-Output "## [$Owasp] $Label"
-        foreach ($m in $matches) {
-            Write-Output ("  {0}:{1}:{2}" -f $m.Path, $m.LineNumber, $m.Line.Trim())
+$rules = Get-Content -Path $rulesFile -Encoding UTF8
+foreach ($line in $rules)
+{
+    $trimmed = $line.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith('#'))
+    {
+        continue
+    }
+
+    # Delimitador: TAB (\t)
+    $parts = $trimmed.Split("`t")
+    if ($parts.Length -lt 7)
+    {
+        continue
+    }
+
+    $ruleId = $parts[0].Trim()
+    $ruleLevel = $parts[1].Trim().ToUpperInvariant()
+    $ruleOwasp = $parts[2].Trim()
+    $ruleGlobs = $parts[3].Split(',') | ForEach-Object { $_.Trim() }
+    $ruleRegex = $parts[4].Trim()
+    $ruleDesc = $parts[5].Trim()
+    $isSecret = ($parts[6].Trim().ToLowerInvariant() -eq 'true')
+
+    # Filtra arquivos que batem com os globs da regra
+    $targetFilesForRule = @($allFiles | Where-Object {
+        $fileName = $_.Name
+        $matchedGlob = $false
+        foreach ($g in $ruleGlobs)
+        {
+            if ($fileName -like $g)
+            {
+                $matchedGlob = $true
+                break
+            }
         }
-        $script:totalHits += $matches.Count
+        $matchedGlob
+    })
+
+    if ($targetFilesForRule.Count -eq 0)
+    {
+        continue
+    }
+
+    $hits = @()
+    foreach ($fileItem in $targetFilesForRule)
+    {
+        try
+        {
+            $matches = Select-String -Path $fileItem.FullName -Pattern $ruleRegex -AllMatches -ErrorAction SilentlyContinue
+            if ($matches)
+            {
+                $hits += $matches
+            }
+        }
+        catch
+        {
+            # Ignora erros de leitura de arquivos binarios/bloqueados
+        }
+    }
+
+    if ($hits.Count -gt 0)
+    {
+        switch ($ruleLevel)
+        {
+            'ALTO'  {
+                $totalAlto += $hits.Count
+            }
+            'MEDIO' {
+                $totalMedio += $hits.Count
+            }
+            'INFO'  {
+                $totalInfo += $hits.Count
+            }
+        }
+
+        Write-Output ("## [{0}] [{1}] [{2}] {3}" -f $ruleLevel, $ruleId, $ruleOwasp, $ruleDesc)
+        foreach ($h in $hits)
+        {
+            if ($isSecret)
+            {
+                Write-Output ("  [SEGREDO REDIGIDO] {0}:{1}" -f $h.Path, $h.LineNumber)
+            }
+            else
+            {
+                Write-Output ("  {0}:{1}: {2}" -f $h.Path, $h.LineNumber,$h.Line.Trim())
+            }
+        }
+        Write-Output ""
     }
 }
 
-Write-Output "# Quick Scan - $TargetDir"
-Write-Output "# $($javaFiles.Count) arquivo(s) .java analisados"
+$totalCandidatos = $totalAlto + $totalMedio + $totalInfo
 
-# A05 - Injection
-Invoke-Check -Label "Concatenacao de String em Query (candidato a SQL Injection)" -Owasp "A05" `
-    -Pattern '(createQuery|createNativeQuery)\([^)]*\+' -Files $javaFiles
-Invoke-Check -Label "Statement.createStatement (candidato a SQL Injection)" -Owasp "A05" `
-    -Pattern 'Statement .*=.*createStatement' -Files $javaFiles
+Write-Output "=========================================================="
+Write-Output "# Resumo da Varredura:"
+Write-Output ("  - Total de candidatos: " + $totalCandidatos)
+Write-Output ("  - ALTO : " + $totalAlto)
+Write-Output ("  - MEDIO: " + $totalMedio)
+Write-Output ("  - INFO : " + $totalInfo)
+Write-Output "=========================================================="
 
-# A09 - Logging & Alerting Failures
-Invoke-Check -Label "printStackTrace (vaza stack trace / nao estruturado)" -Owasp "A09" `
-    -Pattern '\.printStackTrace\(' -Files $javaFiles
+$failLevel = $FailOn.ToLowerInvariant()
+$shouldFail = $false
+if ($failLevel -eq 'alto' -and $totalAlto -gt 0)
+{
+    $shouldFail = $true
+}
+elseif ($failLevel -eq 'medio' -and ($totalAlto -gt 0 -or $totalMedio -gt 0))
+{
+    $shouldFail = $true
+}
 
-# A08 - Software or Data Integrity Failures
-Invoke-Check -Label "ObjectInputStream / readObject (candidato a deserializacao insegura)" -Owasp "A08" `
-    -Pattern '(ObjectInputStream|\.readObject\()' -Files $javaFiles
-Invoke-Check -Label "Jackson enableDefaultTyping (polymorphic deserialization sem allowlist)" -Owasp "A08" `
-    -Pattern 'enableDefaultTyping' -Files $javaFiles
-
-# A04 - Cryptographic Failures
-Invoke-Check -Label "Algoritmo criptografico fraco ou obsoleto" -Owasp "A04" `
-    -Pattern '(AES/ECB|DES/|"MD5"|"SHA-1"|"SHA1")' -Files $javaFiles
-Invoke-Check -Label "new Random() (nao e criptograficamente seguro)" -Owasp "A04" `
-    -Pattern 'new Random\(\)' -Files $javaFiles
-Invoke-Check -Label "TLS/hostname verification desabilitado" -Owasp "A04" `
-    -Pattern '(TrustAllCerts|ALLOW_ALL_HOSTNAME_VERIFIER|NoopHostnameVerifier)' -Files $javaFiles
-
-# A01 - Broken Access Control (CSRF/CORS inclusos)
-Invoke-Check -Label "CSRF desabilitado" -Owasp "A01" `
-    -Pattern 'csrf\([^)]*\.disable\(\)' -Files $javaFiles
-Invoke-Check -Label "CORS com origem wildcard" -Owasp "A01" `
-    -Pattern '(allowedOrigins\("\*"\)|@CrossOrigin\(origins\s*=\s*"\*"\))' -Files $javaFiles
-
-# A05 - XXE
-Invoke-Check -Label "DocumentBuilderFactory sem hardening visivel (verificar se DTD esta desabilitado)" -Owasp "A05" `
-    -Pattern 'DocumentBuilderFactory\.newInstance\(\)' -Files $javaFiles
-
-# A04 - Secrets Management
-Invoke-Check -Label "Possivel segredo hardcoded (confirmar manualmente - regex nao distingue placeholder de valor real)" -Owasp "A04" `
-    -Pattern '(password|secret|apiKey|api_key)\s*=\s*"[^"$]{3,}"' -Files $javaFiles
-
-Write-Output ""
-Write-Output "# Total de achados candidatos: $totalHits"
-if ($totalHits -gt 0) {
-    Write-Output "# Proximo passo: para cada achado, abra o arquivo, confirme se e um falso positivo e,"
-    Write-Output "# se for real, consulte o arquivo de references/ correspondente a categoria OWASP para"
-    Write-Output "# o padrao de correcao (GOOD/BAD)."
-} else {
-    Write-Output "# Nenhum candidato encontrado pelos padroes deste script. Isto NAO significa que o"
-    Write-Output "# codigo esta seguro - continue com o Security Checklist completo do SKILL.md."
+if ($shouldFail)
+{
+    Write-Output ("[FALHA] Candidatos encontrados atendendo ao criterio -FailOn " + $FailOn + ".")
+    exit 1
+}
+else
+{
+    Write-Output ("[SUCESSO] Nenhum candidato atingiu o nivel de falha (" + $FailOn + ").")
+    exit 0
 }

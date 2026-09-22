@@ -1,213 +1,264 @@
-# Tratamento de Erros, Logging, Dependências e Headers (A09/A10:2025)
+# Resiliência, Tratamento de Exceções e Observabilidade Segura (A09/A10:2025)
 
-Cobre tratamento explícito de exceções (sem vazar stack trace), logging/alerting seguro com mascaramento de PII,
-auditoria de dependências e headers de segurança HTTP.
-
-## Conteúdo
-- Mishandling of Exceptional Conditions
-  - ProblemDetail — Padrão RFC 9457 (Spring Boot 3+)
-  - Quarkus — Exception Mapper
-- Logging & Alerting
-  - Log de Eventos de Segurança
-  - PII Masking — MaskingConverter (Logback)
-  - Alerting (Não Só Logging)
-- Dependency Security
-  - OWASP Dependency Check
-  - Keep Dependencies Updated
-  - Pipeline CI/CD — Etapas Obrigatórias
-- Security Headers
+Este documento detalha o princípio de **Fail-Closed**, o tratamento centralizado de erros com **`ProblemDetail` (RFC
+9457)**, boas práticas para **Virtual Threads** e **Mensageria**, mascaramento de dados sensíveis (**PII Masking**) e
+configuração de **Security Headers**.
 
 ---
 
-## Mishandling of Exceptional Conditions (A10:2025)
+## Índice
 
-### ProblemDetail — Padrão RFC 9457 (Spring Boot 3+)
+1. [Princípio Fail-Closed em Decisões de Segurança](#1-princípio-fail-closed-em-decisões-de-segurança)
+2. [Tratamento Padronizado de Erros com ProblemDetail (RFC 9457)](#2-tratamento-padronizado-de-erros-com-problemdetail)
+3. [Timeouts, Circuit Breaker, Retries com Jitter e Backpressure](#3-timeouts-circuit-breaker-retries-e-backpressure)
+4. [Virtual Threads no Java 25 LTS: Cuidados de Concorrência e Segurança](#4-virtual-threads-no-java-25-lts)
+5. [Mensageria Assíncrona Segura (Kafka, RabbitMQ, SQS)](#5-mensageria-assíncrona-segura)
+6. [Logging Estruturado e Mascaramento de PII](#6-logging-estruturado-e-mascaramento-de-pii)
+7. [Alertas Automatizados e Integração com SIEM](#7-alertas-automatizados-e-integração-com-siem)
+8. [Cabeçalhos de Segurança HTTP (Security Headers)](#8-cabeçalhos-de-segurança-http)
+
+---
+
+## 1. Princípio Fail-Closed em Decisões de Segurança
+
+O princípio **Fail-Closed** determina que, na ocorrência de qualquer falha inesperada (exceção em filtro, timeout em
+serviço de autenticação ou queda de conexão com banco de dados), o sistema deve **negar o acesso ou abortar a
+operação**, nunca liberar a requisição por padrão (*fail-open*).
 
 ```java
-// ✅ GOOD: @ControllerAdvice global com ProblemDetail (RFC 9457)
+// ❌ VULNERABLE (Fail-Open): Exceção inesperada libera o acesso
+public boolean isAuthorized(User user, Resource resource) {
+    try {
+        return authorizationClient.checkPermission(user.getId(), resource.getId());
+    } catch (Exception e) {
+        log.error("Falha ao consultar servidor de autorização", e);
+        return true; // PERIGO: Concede acesso se o serviço de permissão cair!
+    }
+}
+
+// ✅ GOOD (Fail-Closed): Nega o acesso e lança exceção controlada
+public boolean isAuthorized(User user, Resource resource) {
+    try {
+        return authorizationClient.checkPermission(user.getId(), resource.getId());
+    } catch (Exception e) {
+        log.error("Falha de comunicação no serviço de autorização", e);
+        return false; // Sempre nega em caso de anomalia
+    }
+}
+```
+
+---
+
+## 2. Tratamento Padronizado de Erros com ProblemDetail
+
+No **Spring Boot 4.1.1+** e **Spring Framework 7**, o formato padrão da indústria para erros HTTP é o **RFC 9457 (
+`ProblemDetail`)**.
+Nunca vaze stack traces, nomes de tabelas, queries SQL, IPs internos ou mensagens cruas de exceção para o cliente.
+
+```java
+// ✅ GOOD: Centralizador global de exceções sem vazamento de detalhes internos
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        log.warn("Access denied", kv("path", request.getRequestURI()), kv("reason", ex.getMessage()));
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied");
-        problem.setType(URI.create("https://errors.mycompany.com/access-denied"));
+        log.warn("Acesso negado para a URI: {}", request.getRequestURI());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.FORBIDDEN,
+            "Você não possui permissão para acessar o recurso solicitado."
+        );
+        problem.setType(URI.create("https://api.empresa.com.br/errors/access-denied"));
+        problem.setProperty("timestamp", Instant.now());
         return problem;
     }
 
-    @ExceptionHandler(PaymentValidationException.class)
-    public ProblemDetail handlePaymentError(PaymentValidationException ex) {
-        log.warn("Payment validation failed", kv("reason", ex.getReason()), kv("orderId", ex.getOrderId()));
-        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY,
-                "Payment could not be processed");
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Dados de entrada inválidos."
+        );
+        problem.setType(URI.create("https://api.empresa.com.br/errors/validation-failed"));
+
+        Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+            .collect(Collectors.toMap(
+                FieldError::getField,
+                fe -> fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Inválido",
+                (existing, replacement) -> existing
+            ));
+
+        problem.setProperty("invalidParams", fieldErrors);
+        return problem;
     }
 
-    // ❌ BAD: nunca expor detalhes internos
-    // return ResponseEntity.status(500).body(e.toString()); // Stack trace leak!
-}
-```
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpectedException(Exception ex) {
+        // Registra o erro completo com stack trace apenas no log seguro interno
+        String errorId = UUID.randomUUID().toString();
+        log.error("Erro interno não tratado [ErrorId: {}]", errorId, ex);
 
-### Quarkus — Exception Mapper
-
-```java
-// Quarkus equivalente
-@Provider
-public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
-
-    @Override
-    public Response toResponse(Exception exception) {
-        log.error("Unhandled exception", exception);
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ErrorResponse("An error occurred"))
-                .build();
+        // Retorna mensagem genérica opaca para o cliente externo
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "Ocorreu um erro interno. Entre em contato com o suporte informando o identificador: " + errorId
+        );
+        problem.setType(URI.create("https://api.empresa.com.br/errors/internal-error"));
+        problem.setProperty("errorId", errorId);
+        return problem;
     }
 }
 ```
 
 ---
 
-## Logging & Alerting (A09:2025)
+## 3. Timeouts, Circuit Breaker, Retries e Backpressure
 
-### Log de Eventos de Segurança
+A indisponibilidade ou lentidão de dependências externas pode esgotar pools de conexões e threads da aplicação, causando
+negação de serviço em cascata.
 
-```java
-// ✅ Logar eventos relevantes de segurança
-log.info("User login successful",kv("userId", userId),kv("ip",clientIp));
-        log.
+### Diretrizes de Auditoria
 
-warn("Failed login attempt",kv("username", username),kv("ip",clientIp),
+- Toda chamada HTTP ou RPC deve ter **timeouts explícitos de conexão e leitura** (máximo 2 a 5 segundos para serviços
+  síncronos).
+- Retries devem utilizar **exponential backoff com jitter aleatório** para evitar o problema de *thundering herd*.
+- Utilize **Resilience4j Circuit Breaker** para isolar dependências com falha contínua.
 
-kv("attempt",attemptCount));
-        log.
-
-warn("Access denied",kv("userId", userId),kv("resource",resourceId));
-        log.
-
-error("Authentication failure",kv("reason", reason),kv("ip",clientIp));
-
-// ❌ NEVER log sensitive data
-        log.
-
-info("Login: user={}, password={}",username, password);  // NUNCA!
+```yaml
+# application.yml — Configuração segura do Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
+  timelimiter:
+    instances:
+      paymentGateway:
+        timeoutDuration: 3s
 ```
 
-### PII Masking — MaskingConverter (Logback)
+---
+
+## 4. Virtual Threads no Java 25 LTS
+
+Com Virtual Threads (`spring.threads.virtual.enabled: true`):
+
+### 1. Prevenção de Thread Pinning
+
+Em Java 21, blocos `synchronized` contendo operações de I/O bloqueante "pinavam" a carrier thread nativa da JVM. Embora
+o Java 24 e 25 tenham substancialmente reduzido o pinning na especificação do runtime, é boa prática arquitetural
+utilizar `ReentrantLock` para sincronizações que envolvam I/O de rede ou disco.
+
+### 2. Limite de Concorrência com Semáforos
+
+Virtual Threads são tão baratas que um loop descontrolado pode criar 100.000 threads disparando requisições contra um
+banco de dados ou API externa. **Nunca use pools de threads para limitar concorrência em Virtual Threads; utilize
+`Semaphore`**:
 
 ```java
-// ✅ GOOD: Custom MaskingConverter para Logback
-public class SensitiveDataMaskingConverter extends ClassicConverter {
+// ✅ GOOD: Limite de concorrência estrito com Semaphore para Virtual Threads
+@Component
+public class ExternalServiceBulkhead {
 
-    private static final Pattern CPF_PATTERN = Pattern.compile("\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}");
+    private final Semaphore semaphore = new Semaphore(50); // Máximo 50 requisições simultâneas
+
+    public <T> T execute(Supplier<T> task) throws InterruptedException {
+        if (!semaphore.tryAcquire(2, TimeUnit.SECONDS)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Serviço sobrecarregado");
+        }
+        try {
+            return task.get();
+        } finally {
+            semaphore.release();
+        }
+    }
+}
+```
+
+---
+
+## 5. Mensageria Assíncrona Segura
+
+Consumidores de eventos (Kafka, RabbitMQ, AWS SQS) recebem dados externos e devem ser auditados com o mesmo rigor dos
+controllers HTTP:
+
+1. **Validação de Schema:** Valide todo payload recebido contra classes com Bean Validation (`@Valid`).
+2. **Idempotência:** Garanta que a mensagem possui um ID único e verifique se já foi processada antes de executar
+   efeitos colaterais.
+3. **Dead Letter Queue (DLQ):** Mensagens venenosas (malformadas ou que causam erros de negócio) devem ser encaminhadas
+   para uma DLQ após N tentativas para não travar a partição.
+4. **Propagação de Contexto de Auditoria:** Extraia cabeçalhos de rastreamento (`traceparent`, `X-Tenant-ID`,
+   `X-User-ID`) e registre nos logs de consumo.
+
+---
+
+## 6. Logging Estruturado e Mascaramento de PII
+
+### Mascaramento de Dados Pessoais e Segredos
+
+Dados como CPF, números de cartão de crédito (PAN), CVV, senhas e chaves privadas **nunca** devem aparecer em texto
+claro nos arquivos de log.
+
+Configuração de conversor de mascaramento para **Logback** (`logback-spring.xml`):
+
+```java
+public class PiiMaskingConverter extends ClassicConverter {
+
+    private static final Pattern CPF_PATTERN = Pattern.compile("\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b");
     private static final Pattern CARD_PATTERN = Pattern.compile("\\b(?:\\d[ -]?){13,16}\\b");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b");
 
     @Override
     public String convert(ILoggingEvent event) {
-        String message = event.getFormattedMessage();
-        message = CPF_PATTERN.matcher(message).replaceAll("***.***.***-**");
-        message = EMAIL_PATTERN.matcher(message).replaceAll("***@***.***");
-        message = CARD_PATTERN.matcher(message).replaceAll("****-****-****-****");
-        return message;
+        String msg = event.getFormattedMessage();
+        msg = CPF_PATTERN.matcher(msg).replaceAll("***.***.***-**");
+        msg = CARD_PATTERN.matcher(msg).replaceAll("****-****-****-****");
+        msg = EMAIL_PATTERN.matcher(msg).replaceAll("***@***.***");
+        return msg;
     }
 }
 ```
 
-```xml
-<!-- logback-spring.xml -->
-<conversionRule conversionWord="mask" converterClass="com.example.SensitiveDataMaskingConverter"/>
-<pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} - %mask%n</pattern>
-```
+---
 
-### Alerting (Não Só Logging)
+## 7. Alertas Automatizados e Integração com SIEM
 
-A09:2025 é "Logging **& Alerting** Failures" — registrar o log não basta se ninguém é notificado. Configure alertas
-automáticos para:
+O requisito **A09:2025** enfatiza a falha em alertar (*Alerting Failures*). Apenas gravar em log não previne incidentes.
 
-| Evento                 | Threshold      | Destino                         |
-|------------------------|----------------|---------------------------------|
-| Login failures         | > 5/min por IP | SIEM / PagerDuty                |
-| 5xx errors             | > baseline     | Prometheus Alertmanager         |
-| Privilege escalation   | Qualquer       | SIEM (ELK + Wazuh / OpenSearch) |
-| Dependency CVE crítico | CVSS ≥ 9       | Slack / email                   |
+### Eventos que Devem Disparar Alertas Imediatos no SIEM:
+
+- **Pico de Autenticações Falhas:** > 10 falhas por minuto para o mesmo usuário ou mesmo IP de origem (ataque de força
+  bruta / credential stuffing).
+- **Acessos Negados Repetidos (403 Forbidden):** > 5 tentativas por minuto pelo mesmo usuário (indício de BOLA ou
+  enumeração de privilégios).
+- **Erros de Validação em Volume Anômalo (422/400):** Varredura automatizada com scanners ou fuzzers de API.
+- **Detecção de Anomalias 5xx:** Erros não tratados acima da linha de base de produção.
 
 ---
 
-## Dependency Security
+## 8. Cabeçalhos de Segurança HTTP
 
-### OWASP Dependency Check
-
-```xml
-
-<plugin>
-    <groupId>org.owasp</groupId>
-    <artifactId>dependency-check-maven</artifactId>
-    <version>12.2.2</version>
-    <executions>
-        <execution>
-            <goals>
-                <goal>check</goal>
-            </goals>
-        </execution>
-    </executions>
-    <configuration>
-        <failBuildOnCVSS>7</failBuildOnCVSS>
-    </configuration>
-</plugin>
-```
-
-```bash
-mvn dependency-check:check
-# Report: target/dependency-check-report.html
-```
-
-### Keep Dependencies Updated
-
-```bash
-mvn versions:display-dependency-updates
-mvn versions:use-latest-releases
-```
-
-### Pipeline CI/CD — Etapas Obrigatórias
-
-```yaml
-# Todas as etapas abaixo devem FALHAR o build se encontrarem problemas críticos
-stages:
-  - sast          # Semgrep, SpotBugs + FindSecBugs
-  - sca           # OWASP Dependency Check (CVSS > 7 falha o build)
-  - sbom          # CycloneDX generation
-  - sign          # Cosign artifact signing
-  - dast          # OWASP ZAP / Nuclei (ambiente de staging)
-  - codeql        # GitHub CodeQL
-```
-
----
-
-## Security Headers
-
-| Header                      | Valor Recomendado                     | Protege contra    |
-|-----------------------------|---------------------------------------|-------------------|
-| `Content-Security-Policy`   | `default-src 'self'`                  | XSS               |
-| `X-Content-Type-Options`    | `nosniff`                             | MIME sniffing     |
-| `X-Frame-Options`           | `DENY`                                | Clickjacking      |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | Downgrade HTTPS   |
-| `X-XSS-Protection`          | `1; mode=block`                       | Legacy XSS filter |
-| `Permissions-Policy`        | `geolocation=(), microphone=()`       | Feature abuse     |
+Os cabeçalhos HTTP endurecem as defesas do cliente contra ataques de Clickjacking, MIME-Sniffing e XSS.
 
 ```java
-
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.headers(headers -> headers
-            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
-            .frameOptions(frame -> frame.deny())
-            .httpStrictTransportSecurity(hsts -> hsts
-                    .maxAgeInSeconds(31536000)
-                    .includeSubDomains(true))
-            .contentTypeOptions(Customizer.withDefaults())
-            .permissionsPolicy(policy -> policy.policy("geolocation=(), microphone=()"))
-    );
-    return http.build();
-}
+// ✅ GOOD: Headers de segurança centralizados na SecurityFilterChain
+http.headers(headers -> headers
+    .contentSecurityPolicy(csp -> csp
+        .policyDirectives("default-src 'none'; frame-ancestors 'none'; sandbox")
+    )
+    .frameOptions(frame -> frame.deny())
+    .httpStrictTransportSecurity(hsts -> hsts
+        .maxAgeInSeconds(31536000)
+        .includeSubDomains(true)
+        .preload(true)
+    )
+    .contentTypeOptions(Customizer.withDefaults())
+    .permissionsPolicy(permissions -> permissions
+        .policy("geolocation=(), camera=(), microphone=(), payment=()")
+    )
+);
 ```
-

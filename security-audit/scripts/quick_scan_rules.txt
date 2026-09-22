@@ -1,0 +1,31 @@
+# quick_scan_rules.txt — Catálogo unificado de regras de pré-varredura
+# Formato: ID	NIVEL	OWASP	GLOBS	REGEX	DESCRICAO	IS_SECRET
+# Delimitador: TAB (\t)
+# Níveis: ALTO, MEDIO, INFO
+# IS_SECRET: true (imprime apenas arquivo:linha, nunca o valor), false (imprime arquivo:linha:trecho)
+
+SEC-001	ALTO	A05	*.java,*.kt	(createQuery|createNativeQuery)\([^)]*\+	Concatenação de String em Query JPA/Hibernate (candidato a SQL/JPQL Injection)	false
+SEC-002	ALTO	A05	*.java,*.kt	Statement .*=.*createStatement	Statement.createStatement sem parametrização (candidato a SQL Injection)	false
+SEC-003	ALTO	A05	*.kt	\$\{[^}]+\}.*(?i)(select|insert|update|delete)	Interpolação de String Kotlin em contexto SQL (candidato a SQL Injection)	false
+SEC-004	ALTO	A05	*.java,*.kt	(Runtime\.getRuntime\(\)\.exec|ProcessBuilder)\(	Execução de comando do sistema (candidato a Command Injection)	false
+SEC-005	ALTO	A05	*.java,*.kt	SpelExpressionParser	SpelExpressionParser (candidato a SpEL Injection; use SimpleEvaluationContext)	false
+SEC-006	ALTO	A05	*.java,*.kt	DocumentBuilderFactory\.newInstance\(	DocumentBuilderFactory sem hardening visível (candidato a XXE)	false
+SEC-007	ALTO	A08	*.java,*.kt	(ObjectInputStream|\.readObject\()	ObjectInputStream / readObject (candidato a deserialização nativa insegura)	false
+SEC-008	ALTO	A08	*.java,*.kt	enableDefaultTyping	Jackson enableDefaultTyping (polymorphic deserialization sem allowlist)	false
+SEC-009	ALTO	A04	*.java,*.kt	(AES/ECB|DES/|"MD5"|"SHA-1"|"SHA1")	Algoritmo criptográfico fraco ou obsoleto (ECB, DES, MD5, SHA-1)	false
+SEC-010	ALTO	A04	*.java,*.kt	(TrustAllCerts|ALLOW_ALL_HOSTNAME_VERIFIER|NoopHostnameVerifier)	TLS / verificação de hostname desabilitada (TrustAll)	false
+SEC-011	ALTO	A04	*.java,*.kt,*.properties,*.yml,*.yaml	(password|secret|apiKey|api_key|token|private_key)\s*[:=]\s*["']?[A-Za-z0-9+/=_\-\.]{8,}["']?	Possível segredo ou credencial hardcoded	true
+SEC-012	ALTO	A01	*.java,*.kt	csrf\([^)]*\.disable\(	CSRF desabilitado (seguro apenas se API for 100% stateless com Bearer token)	false
+SEC-013	ALTO	A01	*.java,*.kt	(allowedOrigins\("\*"\)|allowedOriginPatterns\("\*"\)|@CrossOrigin\(origins\s*=\s*"\*"\))	CORS com origem wildcard (*)	false
+SEC-014	MEDIO	A04	*.java,*.kt	new Random\(	new Random() (não é criptograficamente seguro; use SecureRandom)	false
+SEC-015	MEDIO	A09	*.java,*.kt	\.printStackTrace\(	Uso de printStackTrace (vaza stack trace e bypassa logging estruturado)	false
+SEC-016	MEDIO	A02	*.properties,*.yml,*.yaml	management\.endpoints\.web\.exposure\.include\s*[:=]\s*["']?\*["']?	Actuator com exposição de todos os endpoints (*)	false
+SEC-017	MEDIO	A02	*.properties,*.yml,*.yaml	spring\.devtools\.restart\.enabled\s*[:=]\s*true	Spring Devtools habilitado em arquivo de configuração	false
+SEC-018	MEDIO	A01	*.java,*.kt	permitAll\(\)	Uso de permitAll() amplo em cadeia de segurança (verificar se rota deveria ser restrita)	false
+SEC-019	MEDIO	A03	*.yml,*.yaml	uses:\s*[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-]+@(main|master|v[0-9]+)	GitHub Action fixada por tag/branch em vez de commit SHA imutável	false
+SEC-020	ALTO	A03	*.yml,*.yaml	run:.*(\$\{\{\s*github\.event\.|github\.head_ref)	Interpolação de dados de evento não confiáveis no script run de GitHub Actions	false
+SEC-021	MEDIO	A02	Dockerfile*,*.dockerfile	USER\s+root	Dockerfile configurando container explicitamente para rodar como root	false
+SEC-022	MEDIO	A02	*.yaml,*.yml	privileged:\s*true	Kubernetes Pod com modo privilegiado habilitado	false
+SEC-023	MEDIO	A02	*.yaml,*.yml	allowPrivilegeEscalation:\s*true	Kubernetes Pod com allowPrivilegeEscalation: true	false
+SEC-024	INFO	A01	*.java,*.kt	@PathVariable\s+[a-zA-Z0-9<>_]+\s+id	Identificador de recurso recebido diretamente via PathVariable (verificar autorização BOLA/IDOR)	false
+SEC-025	INFO	A06	*.java,*.kt	@RequestMapping(?!\s*\([^)]*method)	@RequestMapping sem declaração explícita de método HTTP (GET/POST/PUT/DELETE)	false

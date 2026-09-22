@@ -1,93 +1,99 @@
-# Auditoria de Segurança (Security Audit)
+# Auditoria de Segurança (Security Audit Skill)
 
-**Como carregar**: `view_file` no caminho relativo `skills/security-audit/SKILL.md`
+Checklist e método de auditoria de segurança para backends na JVM — APIs, workers, consumidores de mensageria e serviços
+distribuídos em **Java 25 LTS+**, **Kotlin 2.4+** (somente JVM) e **Spring Boot 4.1.1+** (Spring MVC, WebFlux, Spring
+Security 7.1, Jackson 3).
 
----
-
-## Descrição
-
-Checklist de segurança para aplicações Java 21+ baseado no OWASP Top 10:2025. O núcleo é independente de framework e conta com seções e guias detalhados específicos para **Spring Boot 4.1+**, **Quarkus** e **Jakarta EE**, além de suportar análises de **Inteligência Artificial (LLM)** e **Quantum Readiness / Criptografia Pós-Quântica (PQC)**.
+Alinhado rigorosamente com o **OWASP Top 10:2025**, **OWASP API Security Top 10:2023** e **OWASP ASVS 5.0**.
 
 ---
 
-## Casos de Uso
+## Escopo Tecnológico
 
-- "Revise este código em busca de problemas de segurança"
-- "Verifique se há vulnerabilidades de injeção de SQL (SQLi)"
-- "Esta autenticação é segura?"
-- "Auditoria de segurança antes de ir para produção"
-- "Verificação de conformidade com o OWASP Top 10"
-- "Threat modeling de uma nova funcionalidade ou API"
-- "Avaliação de risco de computação quântica (PQC) na criptografia usada"
-
----
-
-## Fluxo de Trabalho (Workflow)
-
-Para realizar uma auditoria de segurança sistemática com esta skill:
-1. **Triagem Rápida:** Execute os scripts utilitários `quick_scan` no diretório do seu código-fonte para detectar de forma rápida potenciais padrões vulneráveis.
-2. **Security Checklist:** Percorra as três camadas do Checklist de Segurança (Desenvolvimento, Pipeline e Infraestrutura).
-3. **Consulta de Referências:** Sempre que houver dúvidas sobre o padrão de mitigação correto, abra e consulte os arquivos do **Mapa de Referências** na pasta `references/`.
-4. **Relatório de Auditoria:** Crie o plano ou relatório preenchendo as vulnerabilidades e propostas de mitigação com base no template `assets/audit-report-template.md`.
+| Suportado oficialmente                                      | Fora de escopo (não gerar regras ou achados específicos) |
+|-------------------------------------------------------------|----------------------------------------------------------|
+| Java 25 LTS+                                                | Android, Kotlin Multiplatform (KMP)                      |
+| Kotlin 2.4+ **somente JVM** (servidor)                      | Kotlin/Native, Kotlin/JS, Kotlin/Wasm                    |
+| Spring Boot 4.1.1+, Spring Framework 7, Spring Security 7.1 | Aplicações mobile, desktop e frontend (SPA, browser)     |
+| Spring MVC e Spring WebFlux (inclusive coroutines)          |                                                          |
+| Maven e Gradle (inclusive Kotlin DSL)                       |                                                          |
+| Contêineres (Docker/Distroless), Kubernetes e Cloud         |                                                          |
 
 ---
 
-## Scripts Utilitários (`quick_scan`)
+## Quando Usar
 
-A skill inclui scripts para varredura determinística e *read-only* de código-fonte em busca de falhas comuns (concatenação em queries SQL, uso de `printStackTrace`, algoritmos criptográficos fracos, CSRF desabilitado, etc.). Eles não modificam seus arquivos.
-
-Execute o script de acordo com seu terminal disponível:
-
-| Plataforma / Shell | Comando |
-| :--- | :--- |
-| **Linux / macOS / Git Bash** | `bash scripts/quick_scan.sh <diretório>` |
-| **PowerShell (Windows)** | `powershell -ExecutionPolicy Bypass -File scripts\quick_scan.ps1 <diretório>` |
-| **CMD (Windows)** | `scripts\quick_scan.bat <diretório>` |
-
-*Nota: O script realiza busca por padrões de strings (grep determinístico). Trate cada ocorrência como um candidato à análise manual.*
+- Revisão de segurança de código próprio ou de terceiros, PR ou módulo.
+- Auditoria antes de release ou entrada em produção ("pode ir pra produção?").
+- Levantamento e inventário de vulnerabilidades e riscos de arquitetura.
+- Revisão de autenticação, autorização, multi-tenancy, OAuth2/OIDC/JWT.
+- Hardening de Spring Boot (Actuator, erros, perfis), contêineres, Kubernetes e CI/CD.
+- Triagem de CVEs de dependências e avaliação de cadeia de suprimentos (Supply Chain).
+- Threat modeling de feature ou API nova (STRIDE / abuso de fluxo de negócio).
+- Avaliação de risco criptográfico pós-quântico (ML-KEM/ML-DSA) em setores regulados (bancos, pagamentos, seguradoras,
+  saúde).
 
 ---
 
-## Mapa de Referências Modulares
+## Modos de Execução
 
-Cada arquivo abaixo cobre um domínio técnico de segurança com explicações, vulnerabilidades e exemplos de mitigação em Java moderno.
-
-| Arquivo | Domínio Técnico Coberto |
-| :--- | :--- |
-| [references/input-validation-injection.md](references/input-validation-injection.md) | Bean Validation JSR 380, allowlists, prevenção de SQLi, XSS, XXE e Path Traversal / Zip Slip. |
-| [references/access-control-auth-api.md](references/access-control-auth-api.md) | Proteção CSRF, autenticação, BOLA/IDOR, tokens JWT/OAuth2 e estratégias de Rate Limiting. |
-| [references/ssrf-crypto-secrets.md](references/ssrf-crypto-secrets.md) | Prevenção de SSRF, criptografia simétrica com AES/GCM e gestão segura de segredos em runtime. |
-| [references/deserialization-supplychain-container.md](references/deserialization-supplychain-container.md) | Jackson Polymorphic Type Validation, SBOM com CycloneDX, assinaturas com Cosign e hardening de containers e Kubernetes. |
-| [references/resilience-observability.md](references/resilience-observability.md) | Tratamento de exceções com ProblemDetail (RFC 9457), log masking de dados sensíveis (PII) e cabeçalhos de segurança (CSP, HSTS). |
-| [references/spring-boot.md](references/spring-boot.md) | Regras específicas para Spring Boot 4.1+, hardening do Actuator, mTLS e SecurityFilterChain. |
-| [references/post-quantum-cryptography.md](references/post-quantum-cryptography.md) | Suporte a algoritmos quânticos (ML-KEM, ML-DSA - FIPS 203/204/205) em Java (nativo vs Bouncy Castle), TLS híbrido, agilidade criptográfica e conformidades regulatórias (PCI DSS 4.0, DORA). |
+| Modo                          | Gatilhos típicos                                             | Comportamento                                                                                                                            |
+|-------------------------------|--------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **Auditoria completa**        | "audita o serviço", "revisão geral", "pode ir pra produção?" | Escopo = repositório/serviço inteiro, incluindo build, CI, Dockerfile e manifestos.                                                      |
+| **Auditoria direcionada**     | Caminho, módulo ou PR informado                              | Escopo = caminho informado + fronteiras (quem chama, o que ele chama, configuração que o afeta).                                         |
+| **Levantamento (inventário)** | "lista as vulnerabilidades", "levanta os riscos"             | Apenas a lista (severidade, categoria, local, descrição curta). Sem correção e sem plano estendido — implica *Do Not Commit on Request*. |
 
 ---
 
-## Cobertura do OWASP Top 10:2025
+## Scripts Utilitários de Pré-Varredura (`quick_scan`)
 
-Esta skill e suas referências estão alinhadas com as mitigações exigidas pela versão mais recente do OWASP Top 10:
+A skill inclui scripts de varredura estática determinística dirigida pelo catálogo unificado
+`scripts/quick_scan_rules.txt`.
+Os scripts são **somente leitura** e suportam o parâmetro `--fail-on`:
 
-| # | Risco OWASP | CWE Primário | Mitigação no Java 21+ |
-| :--- | :--- | :--- | :--- |
-| **A01** | Broken Access Control (inclui SSRF) | CWE-284, CWE-918 | Controle de acesso deny-by-default, validações no service layer, validação rígida de URLs externas. |
-| **A02** | Security Misconfiguration | CWE-16 | Headers de segurança ativos, Actuator restrito, remoção de endpoints de debug. |
-| **A03** | Software Supply Chain Failures | CWE-1395 | Auditoria de dependências, geração de SBOM, assinatura digital de artefatos. |
-| **A04** | Cryptographic Failures | CWE-327 | Uso de algoritmos robustos, chaves criptográficas fortes, mTLS e tráfego HTTPS obrigatório. |
-| **A05** | Injection | CWE-89, CWE-79 | Consultas parametrizadas (JPA/Criteria), validação estruturada com Bean Validation e sanitização HTML. |
-| **A06** | Insecure Design | CWE-657 | Modelagem de ameaças no design da aplicação (STRIDE / OWASP Cornucopia). |
-| **A07** | Authentication Failures | CWE-287 | Multi-factor authentication (MFA), gerenciamento seguro de sessões e rate limiting em endpoints críticos. |
-| **A08** | Software or Data Integrity Failures | CWE-345 | Validação de assinaturas de código e deserialização Jackson segura (com allowlists). |
-| **A09** | Logging & Alerting Failures | CWE-778 | Registro estruturado de eventos de segurança importantes, auditoria de falhas e mascaramento de PII. |
-| **A10** | Mishandling of Exceptional Conditions | CWE-705 | Uso do ProblemDetail (RFC 9457) centralizado e supressão de stack traces em respostas HTTP. |
+| Shell / Ambiente             | Comando                                                                                                    |
+|------------------------------|------------------------------------------------------------------------------------------------------------|
+| **Linux / macOS / Git Bash** | `bash scripts/quick_scan.sh [--fail-on alto\|medio\|nunca] <diretório>`                                    |
+| **PowerShell (Windows)**     | `powershell -ExecutionPolicy Bypass -File scripts\quick_scan.ps1 <diretório> [-FailOn alto\|medio\|nunca]` |
+| **CMD (Windows)**            | `scripts\quick_scan.bat <diretório> [-FailOn alto\|medio\|nunca]`                                          |
+
+- **Níveis de saída:** `ALTO`, `MEDIO`, `INFO` representam a prioridade de triagem do candidato (a severidade final é
+  determinada após confirmação manual).
+- **Proteção de Segredos:** Regras que detectam credenciais imprimem estritamente `arquivo:linha`, garantindo que o
+  valor confidencial **nunca** seja exibido.
+- **Códigos de Saída:**
+    - `0`: Nenhum candidato encontrado no nível de falha configurado (padrão `alto`).
+    - `1`: Candidatos encontrados atingindo ou superando o critério de falha.
+    - `2`: Erro de uso, diretório inexistente ou catálogo ausente.
 
 ---
 
-## Recursos e Modelos Relacionados
+## Mapa de Referências Técnicas
 
-- **Template de Auditoria:** Acesse [assets/audit-report-template.md](assets/audit-report-template.md) para gerar os relatórios de auditoria técnica da skill.
-- **Related Skills:**
-  - `java-code-review` — Revisão de código padrão Java.
-  - `maven-dependency-audit` — Varredura aprofundada de dependências Maven.
-  - `logging-patterns` — Formatação estruturada e segura de logs.
-  - `pdf` — Geração e conversão de relatórios de markdown para HTML/PDF.
+A pasta `references/` contém guias detalhados com explicações normativas e exemplos de código contrastantes (*BAD* vs
+*GOOD*):
+
+| Arquivo                                                                                                    | Domínio Técnico Coberto                                                                                                                                                                                                                                             |
+|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [references/audit-matrix.md](references/audit-matrix.md)                                                   | Taxonomia cruzada (Top 10:2025 × API Top 10:2023 × ASVS 5.0), matriz de severidade, níveis de confiança, sinais auditáveis e evidência mínima por categoria.                                                                                                        |
+| [references/access-control-auth-api.md](references/access-control-auth-api.md)                             | `SecurityFilterChain`/`SecurityWebFilterChain`, autorização em camadas, BOLA/BFLA, multi-tenancy, OAuth2/OIDC/JWT, senhas (Argon2id), CSRF, CORS, open redirects, rate limit, idempotência e inventário de APIs.                                                    |
+| [references/input-validation-injection.md](references/input-validation-injection.md)                       | Bean Validation em Java e Kotlin, SQL/JPQL/HQL Injection, NoSQL, LDAP, command injection, SpEL injection, XXE, YAML injection, upload de arquivos, Path Traversal, Zip Slip e ReDoS.                                                                                |
+| [references/ssrf-crypto-secrets.md](references/ssrf-crypto-secrets.md)                                     | SSRF e `InetAddressFilter`, mitigação de DNS Rebinding, AES-GCM (proibição de ECB), derivação HKDF (`javax.crypto.KDF`), `SecureRandom`, comparação em tempo constante e gestão de segredos.                                                                        |
+| [references/deserialization-supplychain-container.md](references/deserialization-supplychain-container.md) | Desserialização nativa (`ObjectInputFilter`), Jackson 3 sem default typing, kotlinx.serialization, supply chain Maven/Gradle, triagem de CVEs com VEX, SBOM CycloneDX, GitHub Actions seguro, Dockerfile Distroless e Kubernetes Pod Security Standards Restricted. |
+| [references/resilience-observability.md](references/resilience-observability.md)                           | Princípio Fail-Closed, tratamento de erros com `ProblemDetail` (RFC 9457), timeouts, Circuit Breaker, Virtual Threads, mensageria assíncrona segura, mascaramento de PII em logs e Security Headers HTTP.                                                           |
+| [references/spring-boot.md](references/spring-boot.md)                                                     | Spring Boot 4.1.1+: diferenciação estrita de perfis (dev vs prod), hardening do Actuator, `RestClient` com filtro de SSRF, observabilidade OpenTelemetry e testes automatizados de segurança com `MockMvc`.                                                         |
+| [references/kotlin-jvm.md](references/kotlin-jvm.md)                                                       | Kotlin 2.4+ no servidor: nulidade e platform types, alvos de anotação (`@field:` em Bean Validation), data classes e vazamento em `toString()`, coroutines e propagação de contexto de segurança, proxies AOP com plugin `kotlin-spring`.                           |
+| [references/post-quantum-cryptography.md](references/post-quantum-cryptography.md)                         | Criptografia Pós-Quântica (ML-KEM/ML-DSA - FIPS 203/204/205) nativa no JDK 25, TLS híbrido, agilidade criptográfica e panoramas regulatórios em setores financeiros e de saúde.                                                                                     |
+
+---
+
+## Modelo de Relatório de Auditoria
+
+Para formalizar os achados confirmados, utilize o template padronizado
+em [assets/audit-report-template.md](assets/audit-report-template.md), registrando:
+
+- Cobertura explícita da análise (lido, apenas triagem, não tocado).
+- Resumo executivo com contagem de vulnerabilidades por severidade e confiança.
+- Lista de achados com evidência mínima: `arquivo:linha`, trecho redigido, pré-condições, cadeia fonte-a-sumidouro,
+  impacto e teste de regressão automatizado.
+- Plano de remediação priorizado.

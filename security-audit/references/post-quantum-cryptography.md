@@ -9,6 +9,7 @@ Baseline de código: **Java 25 LTS**. Nenhum exemplo usa recurso preview/incubat
 desde o JDK 24 (JEP 496/497) e continuam finais no JDK 25 LTS.
 
 ## Conteúdo
+
 - Por que isso importa agora (Harvest Now, Decrypt Later)
 - O que quebra e o que não quebra
 - Padrões NIST (FIPS 203/204/205)
@@ -37,12 +38,12 @@ seguro, registros contábeis — porque a janela de exposição não é "quando 
 Nem toda criptografia é afetada da mesma forma. Isso decide se o item da checklist é "aumentar o tamanho da chave"
 (barato) ou "trocar de algoritmo" (migração real).
 
-| Tipo                                   | Algoritmos Atuais         | Efeito da Computação Quântica                                  | Ação                          |
-|------------------------------------------|----------------------------|------------------------------------------------------------------|--------------------------------|
-| Assimétrica (troca de chave)             | RSA, ECDH, DH               | Shor's algorithm quebra por completo (não é questão de tamanho de chave) | Migrar para ML-KEM (ou híbrido) |
-| Assimétrica (assinatura)                 | RSA, ECDSA, EdDSA            | Shor's algorithm quebra por completo                             | Migrar para ML-DSA (ou híbrido) |
-| Simétrica (cifragem)                     | AES-128, AES-256             | Grover's algorithm dá apenas speedup quadrático (reduz a segurança pela metade em bits) | AES-256 já tem margem suficiente; evite AES-128 para dados de retenção longa |
-| Hash                                     | SHA-256, SHA-384, SHA-512    | Efeito marginal em resistência a colisão                         | SHA-256 permanece adequado; SHA-384/512 dão margem extra (é o que a CNSA 2.0 exige) |
+| Tipo                         | Algoritmos Atuais         | Efeito da Computação Quântica                                                           | Ação                                                                                |
+|------------------------------|---------------------------|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Assimétrica (troca de chave) | RSA, ECDH, DH             | Shor's algorithm quebra por completo (não é questão de tamanho de chave)                | Migrar para ML-KEM (ou híbrido)                                                     |
+| Assimétrica (assinatura)     | RSA, ECDSA, EdDSA         | Shor's algorithm quebra por completo                                                    | Migrar para ML-DSA (ou híbrido)                                                     |
+| Simétrica (cifragem)         | AES-128, AES-256          | Grover's algorithm dá apenas speedup quadrático (reduz a segurança pela metade em bits) | AES-256 já tem margem suficiente; evite AES-128 para dados de retenção longa        |
+| Hash                         | SHA-256, SHA-384, SHA-512 | Efeito marginal em resistência a colisão                                                | SHA-256 permanece adequado; SHA-384/512 dão margem extra (é o que a CNSA 2.0 exige) |
 
 Ou seja: o item "Ban AES/ECB" e "AES-256" que já está em `references/ssrf-crypto-secrets.md` continua sendo a
 orientação correta para criptografia simétrica — o problema quântico não está ali, está na troca de chave e na
@@ -52,11 +53,11 @@ assinatura assimétrica.
 
 Em agosto de 2024, o NIST finalizou os três padrões primários após um processo de padronização de oito anos:
 
-| Padrão   | Algoritmo | Substitui                | Uso                      |
-|----------|-----------|----------------------------|---------------------------|
-| FIPS 203 | ML-KEM (ex-CRYSTALS-Kyber) | RSA/ECDH para troca de chave | Key Encapsulation Mechanism |
-| FIPS 204 | ML-DSA (ex-CRYSTALS-Dilithium) | RSA/ECDSA para assinatura | Assinatura digital |
-| FIPS 205 | SLH-DSA (ex-SPHINCS+) | — | Assinatura digital, fallback baseado em hash (fundamentação matemática diferente do ML-DSA, para diversidade criptográfica) |
+| Padrão   | Algoritmo                      | Substitui                    | Uso                                                                                                                         |
+|----------|--------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| FIPS 203 | ML-KEM (ex-CRYSTALS-Kyber)     | RSA/ECDH para troca de chave | Key Encapsulation Mechanism                                                                                                 |
+| FIPS 204 | ML-DSA (ex-CRYSTALS-Dilithium) | RSA/ECDSA para assinatura    | Assinatura digital                                                                                                          |
+| FIPS 205 | SLH-DSA (ex-SPHINCS+)          | —                            | Assinatura digital, fallback baseado em hash (fundamentação matemática diferente do ML-DSA, para diversidade criptográfica) |
 
 Cada algoritmo tem parâmetros de nível de segurança crescente (ex.: ML-KEM-512/768/1024, ML-DSA-44/65/87). Para a
 maioria das aplicações comerciais, **ML-KEM-768** e **ML-DSA-65** são o ponto de partida recomendado — equivalem
@@ -73,10 +74,10 @@ No baseline desta skill (Java 25 LTS), ML-KEM e ML-DSA **já são nativos** — 
 recursos finais (não preview) no JDK 24 e permanecem finais no JDK 25 LTS. Não é necessário nenhum flag
 `--enable-preview` nem dependência externa para usá-los.
 
-| Caminho                       | Necessário quando                                                                 | Cobre                                              |
-|----------------------------------|----------------------------------------------------------------------------------|------------------------------------------------------|
-| Nativo (JDK 25 LTS, JEP 496/497)  | Sempre — é o baseline desta skill, zero dependência extra                        | `KeyPairGenerator`, `KEM`, `KeyFactory` (ML-KEM); `KeyPairGenerator`, `Signature`, `KeyFactory` (ML-DSA) |
-| Bouncy Castle (`BCJSSE`)          | Apenas para proteger o **handshake TLS** — ver seção de TLS abaixo               | Hybrid key exchange em `javax.net.ssl`, via provider `BCJSSE` |
+| Caminho                          | Necessário quando                                                  | Cobre                                                                                                    |
+|----------------------------------|--------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| Nativo (JDK 25 LTS, JEP 496/497) | Sempre — é o baseline desta skill, zero dependência extra          | `KeyPairGenerator`, `KEM`, `KeyFactory` (ML-KEM); `KeyPairGenerator`, `Signature`, `KeyFactory` (ML-DSA) |
+| Bouncy Castle (`BCJSSE`)         | Apenas para proteger o **handshake TLS** — ver seção de TLS abaixo | Hybrid key exchange em `javax.net.ssl`, via provider `BCJSSE`                                            |
 
 Ou seja: para os dois casos de uso mais comuns — proteger uma chave de sessão (envelope encryption) e assinar um
 artefato — o JDK 25 LTS sozinho já resolve, sem Bouncy Castle. A única lacuna real do JDK 25 LTS é o **handshake
@@ -191,9 +192,9 @@ o handshake TLS do seu serviço já está protegido — mesmo no baseline Java 2
   padrão, sem mudança de código), mais `SecP256r1MLKEM768` e `SecP384r1MLKEM1024` (opt-in via
   `jdk.tls.namedGroups` ou `SSLParameters::setNamedGroups`). Não é preview — é um recurso final do JEP quando
   disponível.
-- **Lacuna em LTS:** como o Java segue ciclo de LTS a cada dois anos, o JEP 527 só chega a uma LTS no JDK 29
-  (2027). Até lá, hybrid TLS nativo via JSSE não está disponível no Java 25 LTS — a rota real é o provider
-  **BCJSSE** do Bouncy Castle como ponte, especificamente para o handshake TLS (não para KEM/assinatura, que já são
+- **Lacuna em LTS:** como o Java segue ciclo de LTS a cada dois anos, o JEP 527 só chega a uma LTS no JDK 29 (2027). Até
+  lá, hybrid TLS nativo via JSSE não está disponível no Java 25 LTS — a rota real é o provider **BCJSSE** do Bouncy
+  Castle como ponte, especificamente para o handshake TLS (não para KEM/assinatura, que já são
   nativos).
 
 ```java
@@ -246,14 +247,15 @@ rápido para proteger tráfego externo antes mesmo de tocar no código da aplica
 Assinaturas e chaves pós-quânticas são ordens de magnitude maiores que RSA/ECDSA. Isso tem consequência prática
 direta em sistemas financeiros e em qualquer lugar com limite de tamanho de mensagem/token:
 
-| Algoritmo         | Tamanho aproximado                          |
-|--------------------|------------------------------------------------|
-| ECDSA (P-256)       | ~64–72 bytes (assinatura)                      |
-| ML-DSA-65           | ~3.3 KB (assinatura)                           |
-| SLH-DSA             | ~8–50 KB (assinatura) — evite em caminhos de latência crítica |
-| ML-KEM-768          | ~1.1–1.2 KB (chave pública + ciphertext)        |
+| Algoritmo     | Tamanho aproximado                                            |
+|---------------|---------------------------------------------------------------|
+| ECDSA (P-256) | ~64–72 bytes (assinatura)                                     |
+| ML-DSA-65     | ~3.3 KB (assinatura)                                          |
+| SLH-DSA       | ~8–50 KB (assinatura) — evite em caminhos de latência crítica |
+| ML-KEM-768    | ~1.1–1.2 KB (chave pública + ciphertext)                      |
 
 Implicações concretas:
+
 - Um JWT assinado com ML-DSA fica dezenas de vezes maior que um assinado com ECDSA/RS256 — pode estourar limites de
   tamanho de header HTTP em proxies/gateways já configurados para tokens clássicos.
 - Mensageria financeira com limite de payload fixo (ex.: formatos legados de mensagens interbancárias) pode não
@@ -282,14 +284,14 @@ precisa ficar confidencial**, não por "criticidade" genérica:
 Nenhuma dessas normas exige literalmente "implemente ML-KEM até [data]" para todo mundo — elas exigem inventário
 criptográfico documentado e plano de migração, o que ainda assim é um item de auditoria concreto e verificável.
 
-| Norma/Guia                        | Setor                          | O que exige hoje                                                        |
-|-------------------------------------|-----------------------------------|-----------------------------------------------------------------------------|
-| PCI DSS 4.0, Requisito 12.3.3        | Meios de pagamento                 | Inventário criptográfico documentado e plano de migração para algoritmos obsoletos |
-| HIPAA Security Rule, atualização recente | Saúde (ePHI)                    | Análise de risco contínua deve considerar a ameaça quântica, especialmente para dados de retenção longa |
-| EU DORA, Artigo 9                    | Bancos/seguradoras na UE           | Gestão de risco de TIC deve considerar ameaças quânticas à criptografia do setor financeiro |
-| Roteiro PQC coordenado da UE          | Infraestrutura crítica (inclui financeiro) | Início da transição até o fim de 2026; sistemas de alto risco protegidos com PQC até o fim de 2030 |
-| NIST IR 8547                          | Referência civil (EUA)             | RSA/ECC descontinuados após 2030, não permitidos após 2035                  |
-| NSA CNSA 2.0                          | Sistemas de segurança nacional dos EUA | Não vincula bancos/hospitais comerciais diretamente, mas é adotado como roteiro de referência de fato pelo setor — especifica ML-KEM-1024/ML-DSA-87, com transições escalonadas entre 2030–2033 |
+| Norma/Guia                               | Setor                                      | O que exige hoje                                                                                                                                                                                |
+|------------------------------------------|--------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PCI DSS 4.0, Requisito 12.3.3            | Meios de pagamento                         | Inventário criptográfico documentado e plano de migração para algoritmos obsoletos                                                                                                              |
+| HIPAA Security Rule, atualização recente | Saúde (ePHI)                               | Análise de risco contínua deve considerar a ameaça quântica, especialmente para dados de retenção longa                                                                                         |
+| EU DORA, Artigo 9                        | Bancos/seguradoras na UE                   | Gestão de risco de TIC deve considerar ameaças quânticas à criptografia do setor financeiro                                                                                                     |
+| Roteiro PQC coordenado da UE             | Infraestrutura crítica (inclui financeiro) | Início da transição até o fim de 2026; sistemas de alto risco protegidos com PQC até o fim de 2030                                                                                              |
+| NIST IR 8547                             | Referência civil (EUA)                     | RSA/ECC descontinuados após 2030, não permitidos após 2035                                                                                                                                      |
+| NSA CNSA 2.0                             | Sistemas de segurança nacional dos EUA     | Não vincula bancos/hospitais comerciais diretamente, mas é adotado como roteiro de referência de fato pelo setor — especifica ML-KEM-1024/ML-DSA-87, com transições escalonadas entre 2030–2033 |
 
 Trate esta tabela como ponto de partida para uma auditoria de conformidade, não como texto legal — confirme a
 versão vigente de cada norma com o time de compliance/jurídico antes de reportar um achado como não conformidade.
@@ -314,6 +316,7 @@ KeyPairGenerator.getInstance(cryptoConfig.getKeyExchangeAlgorithm());
 ```
 
 Itens concretos de crypto-agility para revisar:
+
 - O nome do algoritmo está centralizado em configuração (Spring `@ConfigurationProperties`, variável de ambiente),
   não espalhado como string literal?
 - O formato de serialização de chave/certificado suporta os dois algoritmos durante a transição (esquemas híbridos
@@ -323,25 +326,29 @@ Itens concretos de crypto-agility para revisar:
 
 ## Ferramentas e Referências
 
-| Ferramenta/Fonte                          | Uso                                                              |
-|----------------------------------------------|---------------------------------------------------------------------|
-| NIST CSRC — PQC Standardization               | Especificação oficial dos FIPS 203/204/205 e status do HQC          |
-| OpenJDK JEP 496, 497, 527                     | Especificação exata da API Java nativa (ML-KEM, ML-DSA, TLS híbrido) |
+| Ferramenta/Fonte                                         | Uso                                                                                                       |
+|----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| NIST CSRC — PQC Standardization                          | Especificação oficial dos FIPS 203/204/205 e status do HQC                                                |
+| OpenJDK JEP 496, 497, 527                                | Especificação exata da API Java nativa (ML-KEM, ML-DSA, TLS híbrido)                                      |
 | Bouncy Castle PQC Almanac (`downloads.bouncycastle.org`) | Referência de API para a ponte de TLS híbrido (BCJSSE) antes do JDK 29, ou para serviços ainda em Java 21 |
-| NSA CNSA 2.0 Guidance                         | Roteiro de referência de facto para prazos de migração             |
+| NSA CNSA 2.0 Guidance                                    | Roteiro de referência de facto para prazos de migração                                                    |
 
 ## Referências
 
 - NIST — [Post-Quantum Cryptography Standardization Project](https://csrc.nist.gov/pqc-standardization)
-- NIST — [FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)](https://csrc.nist.gov/pubs/fips/203/final)
+-
+NIST — [FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)](https://csrc.nist.gov/pubs/fips/203/final)
 - NIST — [FIPS 204: Module-Lattice-Based Digital Signature Standard (ML-DSA)](https://csrc.nist.gov/pubs/fips/204/final)
-- NIST — [FIPS 205: Stateless Hash-Based Digital Signature Standard (SLH-DSA)](https://csrc.nist.gov/pubs/fips/205/final)
+-
+NIST — [FIPS 205: Stateless Hash-Based Digital Signature Standard (SLH-DSA)](https://csrc.nist.gov/pubs/fips/205/final)
 - OpenJDK — [JEP 496: Quantum-Resistant Module-Lattice-Based Key Encapsulation Mechanism](https://openjdk.org/jeps/496)
 - OpenJDK — [JEP 497: Quantum-Resistant Module-Lattice-Based Digital Signature Algorithm](https://openjdk.org/jeps/497)
 - OpenJDK — [JEP 527: Hybrid Key Exchange in TLS 1.3](https://openjdk.org/jeps/527)
-- NSA — [Announcing the Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)](https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/3148990/nsa-releases-future-quantum-resistant-qr-algorithm-requirements-for-national-se/)
+-
+NSA — [Announcing the Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)](https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/3148990/nsa-releases-future-quantum-resistant-qr-algorithm-requirements-for-national-se/)
 - Bouncy Castle — [bouncycastle.org](https://www.bouncycastle.org/) (documentação de API e PQC Almanac)
-- PCI Security Standards Council — [Document Library](https://www.pcisecuritystandards.org/document_library) (PCI DSS 4.0, Requisito 12.3.3)
+- PCI Security Standards Council — [Document Library](https://www.pcisecuritystandards.org/document_library) (PCI DSS
+  4.0, Requisito 12.3.3)
 - HHS — [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html)
 - EUR-Lex — [Regulation (EU) 2022/2554 (DORA)](https://eur-lex.europa.eu/eli/reg/2022/2554/oj)
 

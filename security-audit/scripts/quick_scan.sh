@@ -1,102 +1,172 @@
 #!/usr/bin/env bash
-# quick_scan.sh — Pré-varredura estática determinística (grep) para Java/Spring/Quarkus/Jakarta EE.
-#
-# Objetivo: triagem RÁPIDA de candidatos a problema antes da revisão manual usando o checklist
-# do SKILL.md. Isto NÃO substitui SAST (Semgrep/SpotBugs), revisão manual, nem os padrões
-# GOOD/BAD documentados nos arquivos de references/. Todo achado aqui é um candidato a ser
-# confirmado manualmente — grep não entende contexto, então falsos positivos são esperados.
+# quick_scan.sh — Pré-varredura estática determinística dirigida por catálogo de regras.
+# Suporta Linux, macOS e Git Bash (Bash 3.2+).
 #
 # Uso:
-#   scripts/quick_scan.sh <diretório-alvo>
+#   scripts/quick_scan.sh [--fail-on alto|medio|nunca] <diretório>
 #
-# Saída: lista de achados agrupados por categoria OWASP, no formato arquivo:linha.
+# Códigos de saída:
+#   0: Sem candidatos no nível de falha configurado
+#   1: Candidatos encontrados no nível de falha configurado
+#   2: Erro de uso, diretório inexistente ou catálogo de regras ausente
 
 set -euo pipefail
 
-TARGET_DIR="${1:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RULES_FILE="${SCRIPT_DIR}/quick_scan_rules.txt"
+
+FAIL_ON="alto"
+TARGET_DIR=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --fail-on)
+            if [[ $# -lt 2 ]]; then
+                echo "Erro: --fail-on requer um argumento (alto|medio|nunca)" >&2
+                exit 2
+            fi
+            FAIL_ON="$(echo "$2" | tr '[:upper:]' '[:lower:]')"
+            shift 2
+            ;;
+        --fail-on=*)
+            FAIL_ON="$(echo "${1#*=}" | tr '[:upper:]' '[:lower:]')"
+            shift 1
+            ;;
+        -h|--help)
+            echo "Uso: $0 [--fail-on alto|medio|nunca] <diretório>"
+            exit 0
+            ;;
+        *)
+            if [[ -z "$TARGET_DIR" ]]; then
+                TARGET_DIR="$1"
+            else
+                echo "Erro: argumento inesperado '$1'" >&2
+                exit 2
+            fi
+            shift 1
+            ;;
+    esac
+done
+
+if [[ "$FAIL_ON" != "alto" && "$FAIL_ON" != "medio" && "$FAIL_ON" != "nunca" ]]; then
+    echo "Erro: valor inválido para --fail-on ('$FAIL_ON'). Use alto, medio ou nunca." >&2
+    exit 2
+fi
 
 if [[ -z "$TARGET_DIR" ]]; then
-    echo "Uso: quick_scan.sh <diretório-alvo>" >&2
-    echo "Exemplo: quick_scan.sh src/main/java" >&2
-    exit 1
+    echo "Erro: diretório alvo não informado." >&2
+    echo "Uso: $0 [--fail-on alto|medio|nunca] <diretório>" >&2
+    exit 2
 fi
 
 if [[ ! -d "$TARGET_DIR" ]]; then
     echo "Erro: diretório '$TARGET_DIR' não existe." >&2
-    exit 1
+    exit 2
 fi
 
-JAVA_FILES_COUNT=$(find "$TARGET_DIR" -name '*.java' | wc -l | tr -d ' ')
-if [[ "$JAVA_FILES_COUNT" -eq 0 ]]; then
-    echo "Nenhum arquivo .java encontrado em '$TARGET_DIR'. Nada para escanear." >&2
-    exit 0
+if [[ ! -f "$RULES_FILE" ]]; then
+    echo "Erro: catálogo de regras '$RULES_FILE' não encontrado." >&2
+    exit 2
 fi
 
-TOTAL_HITS=0
+# Diretórios excluídos da análise
+PRUNE_PATHS=(
+    -name ".git" -o
+    -name ".gradle" -o
+    -name ".idea" -o
+    -name ".mvn" -o
+    -name "node_modules" -o
+    -name "target" -o
+    -name "build" -o
+    -name "out"
+)
 
-# grep_check <label> <owasp-ref> <regex> <glob>
-grep_check() {
-    local label="$1" owasp="$2" pattern="$3" glob="$4"
-    local hits
-    hits=$(grep -rnE --include="$glob" "$pattern" "$TARGET_DIR" 2>/dev/null || true)
-    if [[ -n "$hits" ]]; then
-        echo ""
-        echo "## [$owasp] $label"
-        echo "$hits" | sed 's/^/  /'
-        local count
-        count=$(echo "$hits" | wc -l | tr -d ' ')
-        TOTAL_HITS=$((TOTAL_HITS + count))
-    fi
-}
+TOTAL_ALTO=0
+TOTAL_MEDIO=0
+TOTAL_INFO=0
 
 echo "# Quick Scan — $TARGET_DIR"
-echo "# $JAVA_FILES_COUNT arquivo(s) .java analisados"
-
-# A05 — Injection
-grep_check "Concatenação de String em Query (candidato a SQL Injection)" "A05" \
-    '(createQuery|createNativeQuery)\([^)]*\+' '*.java'
-grep_check "Statement.executeQuery com concatenação (candidato a SQL Injection)" "A05" \
-    'Statement .*=.*createStatement' '*.java'
-
-# A09 — Logging & Alerting Failures
-grep_check "printStackTrace (vaza stack trace / não estruturado)" "A09" \
-    '\.printStackTrace\(' '*.java'
-
-# A08 — Software or Data Integrity Failures
-grep_check "ObjectInputStream / readObject (candidato a deserialização insegura)" "A08" \
-    '(ObjectInputStream|\.readObject\()' '*.java'
-grep_check "Jackson enableDefaultTyping (polymorphic deserialization sem allowlist)" "A08" \
-    'enableDefaultTyping' '*.java'
-
-# A04 — Cryptographic Failures
-grep_check "Algoritmo criptográfico fraco ou obsoleto" "A04" \
-    '(AES/ECB|DES/|"MD5"|"SHA-1"|"SHA1")' '*.java'
-grep_check "new Random() (não é criptograficamente seguro)" "A04" \
-    'new Random\(\)' '*.java'
-grep_check "TLS/hostname verification desabilitado" "A04" \
-    '(TrustAllCerts|ALLOW_ALL_HOSTNAME_VERIFIER|NoopHostnameVerifier)' '*.java'
-
-# A01 — Broken Access Control (CSRF/CORS incluídos)
-grep_check "CSRF desabilitado" "A01" \
-    'csrf\([^)]*\.disable\(\)' '*.java'
-grep_check "CORS com origem wildcard" "A01" \
-    '(allowedOrigins\("\*"\)|@CrossOrigin\(origins\s*=\s*"\*"\))' '*.java'
-
-# A05 — XXE
-grep_check "DocumentBuilderFactory sem hardening visível (verificar se DTD está desabilitado)" "A05" \
-    'DocumentBuilderFactory\.newInstance\(\)' '*.java'
-
-# A04 — Secrets Management
-grep_check "Possível segredo hardcoded (confirmar manualmente — grep não distingue placeholder de valor real)" "A04" \
-    '(password|secret|apiKey|api_key)\s*=\s*"[^"$]{3,}"' '*.java'
-
+echo "# Catálogo: $RULES_FILE"
+echo "# Nível de falha (--fail-on): $FAIL_ON"
 echo ""
-echo "# Total de achados candidatos: $TOTAL_HITS"
-if [[ "$TOTAL_HITS" -gt 0 ]]; then
-    echo "# Próximo passo: para cada achado, abra o arquivo, confirme se é um falso positivo e,"
-    echo "# se for real, consulte o arquivo de references/ correspondente à categoria OWASP para"
-    echo "# o padrão de correção (GOOD/BAD)."
+
+# Processa linha a linha do catálogo de regras delimitado por TAB (\t)
+while IFS=$'\t' read -r rule_id rule_level rule_owasp rule_globs rule_regex rule_desc is_secret || [[ -n "$rule_id" ]]; do
+    # Ignora linhas vazias ou comentários
+    [[ -z "$rule_id" || "$rule_id" =~ ^[[:space:]]*# ]] && continue
+
+    rule_level="$(echo "$rule_level" | tr '[:lower:]' '[:upper:]')"
+    
+    # Monta lista de includes para o find a partir dos globs separados por vírgula
+    IFS=',' read -r -a globs_array <<< "$rule_globs"
+    name_args=()
+    for i in "${!globs_array[@]}"; do
+        g="$(echo "${globs_array[$i]}" | tr -d ' ')"
+        if [[ $i -gt 0 ]]; then
+            name_args+=("-o")
+        fi
+        name_args+=("-name" "$g")
+    done
+
+    # Localiza arquivos correspondentes que não estejam nos diretórios ignorados
+    matched_files=()
+    while IFS= read -r f; do
+        [[ -n "$f" ]] && matched_files+=("$f")
+    done < <(find "$TARGET_DIR" \( "${PRUNE_PATHS[@]}" \) -prune -o -type f \( "${name_args[@]}" \) -print 2>/dev/null || true)
+
+    if [[ ${#matched_files[@]} -eq 0 ]]; then
+        continue
+    fi
+
+    # Executa regex nos arquivos localizados
+    rule_hits=""
+    if [[ "$is_secret" == "true" ]]; then
+        # Para segredos, imprime estritamente arquivo:linha sem o valor
+        rule_hits=$(grep -rnE "$rule_regex" "${matched_files[@]}" 2>/dev/null | awk -F: '{print $1 ":" $2}' || true)
+    else
+        rule_hits=$(grep -rnE "$rule_regex" "${matched_files[@]}" 2>/dev/null || true)
+    fi
+
+    if [[ -n "$rule_hits" ]]; then
+        hit_count=$(echo "$rule_hits" | wc -l | tr -d ' ')
+        case "$rule_level" in
+            ALTO)  TOTAL_ALTO=$((TOTAL_ALTO + hit_count)) ;;
+            MEDIO) TOTAL_MEDIO=$((TOTAL_MEDIO + hit_count)) ;;
+            INFO)  TOTAL_INFO=$((TOTAL_INFO + hit_count)) ;;
+        esac
+
+        echo "## [$rule_level] [$rule_id] [$rule_owasp] $rule_desc"
+        if [[ "$is_secret" == "true" ]]; then
+            echo "$rule_hits" | sed 's/^/  [SEGREDO REDIGIDO] /'
+        else
+            echo "$rule_hits" | sed 's/^/  /'
+        fi
+        echo ""
+    fi
+
+done < "$RULES_FILE"
+
+TOTAL_CANDIDATOS=$((TOTAL_ALTO + TOTAL_MEDIO + TOTAL_INFO))
+
+echo "=========================================================="
+echo "# Resumo da Varredura:"
+echo "  - Total de candidatos: $TOTAL_CANDIDATOS"
+echo "  - ALTO : $TOTAL_ALTO"
+echo "  - MEDIO: $TOTAL_MEDIO"
+echo "  - INFO : $TOTAL_INFO"
+echo "=========================================================="
+
+SHOULD_FAIL=0
+if [[ "$FAIL_ON" == "alto" && "$TOTAL_ALTO" -gt 0 ]]; then
+    SHOULD_FAIL=1
+elif [[ "$FAIL_ON" == "medio" && ($TOTAL_ALTO -gt 0 || $TOTAL_MEDIO -gt 0) ]]; then
+    SHOULD_FAIL=1
+fi
+
+if [[ "$SHOULD_FAIL" -eq 1 ]]; then
+    echo "[FALHA] Candidatos encontrados atendendo ao critério --fail-on $FAIL_ON."
+    exit 1
 else
-    echo "# Nenhum candidato encontrado pelos padrões deste script. Isto NÃO significa que o"
-    echo "# código está seguro — continue com o Security Checklist completo do SKILL.md."
+    echo "[SUCESSO] Nenhum candidato atingiu o nível de falha ($FAIL_ON)."
+    exit 0
 fi
